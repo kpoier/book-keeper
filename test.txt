@@ -1,0 +1,6 @@
+linux
+curl -X POST http://192.168.88.252:8080/api/records -H "Content-Type: application/json" -d '{"amount": 150.0, "category": "餐飲", "type": "expense", "date": "2026-03-31T12:00:00Z", "note": "午餐便當"}'
+
+windows
+Invoke-RestMethod -Uri "http://192.168.88.252:8080/api/records" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"amount": 150.0, "category": "餐飲", "type": "expense", "date": "2026-03-31T12:00:00Z", "note": "午餐便當"}'
+

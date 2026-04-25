@@ -1,0 +1,32 @@
+# Rust backend
+backend/target/
+Cargo.lock
+*.pdb
+*.swp
+*.swo
+*~
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Android app
+*.apk
+*.ap_
+*.dex
+*.class
+build/
+.gradle/
+local.properties
+*.iml
+.idea/
+.DS_Store
+gradle/
+gradlew
+gradlew.bat
+
+# General
+.env
+.env.local
+node_modules/
+dist/

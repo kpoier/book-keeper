@@ -1,4 +1,4 @@
-package com.example.book_keeper.data
+package com.example.book_keeper.network
 
 import android.content.Context
 import android.content.SharedPreferences
