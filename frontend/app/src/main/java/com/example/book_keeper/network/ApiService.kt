@@ -5,6 +5,9 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
+import retrofit2.http.DELETE
+import retrofit2.http.PUT
+import retrofit2.http.Path
 
 // --- 定義資料結構 ---
 data class AuthPayload(val username: String, val password: String)
@@ -40,6 +43,17 @@ interface ApiService {
 
     @POST("/api/records")
     suspend fun createRecord(@Body payload: RecordPayload): Response<ApiResponse>
+
+    @PUT("/api/records/{id}")
+    suspend fun updateRecord(
+        @Path("id") id: Int,
+        @Body payload: RecordPayload
+    ): retrofit2.Response<ApiResponse>
+
+    @DELETE("/api/records/{id}")
+    suspend fun deleteRecord(
+        @Path("id") id: Int
+    ): retrofit2.Response<ApiResponse>
 
     @GET("/api/records")
     suspend fun getRecords(

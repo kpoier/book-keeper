@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Query, State, FromRequestParts},
+    extract::{Query, State, FromRequestParts, Path},
     http::StatusCode,
     http::request::Parts,
     response::IntoResponse,
@@ -39,7 +39,7 @@ pub async fn create_record(
     Json(payload): Json<RecordPayload>,
 ) -> (StatusCode, Json<ApiResponse>) {
     let user_id = claims.sub; // 從 Token 中拿出剛剛登入的使用者 ID·
-    println!("preparing to write data into db: {}", user_id);
+    tracing::info!("preparing to write data into db: {}", user_id);
 
     // SQL 語法加入 user_id
     let result = sqlx::query(
@@ -62,7 +62,7 @@ pub async fn create_record(
             (StatusCode::CREATED, Json(response))
         }
         Err(e) => {
-            eprintln!("failed to write data into db: {}", e);
+            tracing::error!("failed to write data into db: {}", e);
             let response = ApiResponse {
                 status: "error".to_string(),
                 message: "server error, failed to save data".to_string(),
@@ -105,7 +105,7 @@ pub async fn get_records(
     match result {
         Ok(data) => (StatusCode::OK, Json(data)),
         Err(e) => {
-            eprintln!("failed to get records from db: {}", e);
+            tracing::error!("failed to get records from db: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, Json(vec![]))
         }
     }
@@ -126,8 +126,8 @@ pub async fn get_summary(
     let record = sqlx::query_as::<_, SummaryResponse>(
         r#"
         SELECT 
-            COALESCE(SUM(CASE WHEN record_type = 'expense' THEN amount ELSE 0 END), 0.0) as total_expense,
-            COALESCE(SUM(CASE WHEN record_type = 'income' THEN amount ELSE 0 END), 0.0) as total_income
+            CAST(COALESCE(SUM(CASE WHEN record_type = 'expense' THEN amount ELSE 0 END), 0.0) AS REAL) as total_expense,
+            CAST(COALESCE(SUM(CASE WHEN record_type = 'income' THEN amount ELSE 0 END), 0.0) AS REAL) as total_income
         FROM records
         WHERE user_id = ? AND date LIKE ?
         "#,
@@ -146,7 +146,7 @@ pub async fn get_summary(
             }),
         ),
         Err(e) => {
-            eprintln!("failed to get summary from db: {}", e);
+            tracing::error!("failed to get summary from db: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(SummaryResponse {
@@ -261,6 +261,79 @@ where
             }
             // 沒帶 Token 或格式錯誤
             _ => Err((StatusCode::UNAUTHORIZED, Json(json!({"status": "error", "message": "Missing Authorization Token"})))),
+        }
+    }
+}
+
+// 刪除
+pub async fn delete_record(
+    State(pool): State<SqlitePool>,
+    claims: Claims,
+    Path(id): Path<i32>,
+) -> (StatusCode, Json<ApiResponse>) {
+    let user_id = claims.sub;
+
+    tracing::info!("preparing to delete record with id: {}, user_id: {}", id, user_id);
+
+    // 執行刪除
+    let result = sqlx::query("DELETE FROM records WHERE id = ? AND user_id = ?")
+        .bind(id)
+        .bind(user_id)
+        .execute(&pool)
+        .await;
+
+    match result {
+        Ok(row) if row.rows_affected() > 0 => {
+            (StatusCode::OK, Json(ApiResponse { status: "success".to_string(), message: "record deleted".to_string() }))
+        }
+        Ok(_) => {
+            (StatusCode::NOT_FOUND, Json(ApiResponse { status: "error".to_string(), message: "record not found".to_string() }))
+        }
+        Err(e) => {
+            tracing::error!("failed to delete record: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse { status: "error".to_string(), message: "server error".to_string() }))
+        }
+    }
+}
+
+// edit
+pub async fn update_record(
+    State(pool): State<SqlitePool>,
+    claims: Claims,
+    Path(id): Path<i32>,
+    Json(payload): Json<RecordPayload>,
+) -> (StatusCode, Json<ApiResponse>) {
+    let user_id = claims.sub;
+
+    tracing::info!("preparing to update record with id: {}, user_id: {}", id, user_id);
+    
+    let result = sqlx::query(
+        r#"
+        UPDATE records 
+        SET amount = ?, category = ?, record_type = ?, date = ?, note = ? 
+        WHERE id = ? AND user_id = ?
+        "#
+    )
+        .bind(payload.amount)
+        .bind(payload.category)
+        .bind(payload.record_type)
+        .bind(payload.date)
+        .bind(payload.note)
+        .bind(id)
+        .bind(user_id)
+        .execute(&pool)
+        .await;
+
+    match result {
+        Ok(row) if row.rows_affected() > 0 => {
+            (StatusCode::OK, Json(ApiResponse { status: "success".to_string(), message: "record updated".to_string() }))
+        }
+        Ok(_) => {
+            (StatusCode::NOT_FOUND, Json(ApiResponse { status: "error".to_string(), message: "record not found".to_string() }))
+        }
+        Err(e) => {
+            tracing::error!("failed to update record: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse { status: "error".to_string(), message: "server error".to_string() }))
         }
     }
 }

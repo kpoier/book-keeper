@@ -13,7 +13,9 @@ import com.example.book_keeper.network.ApiClient
 import com.example.book_keeper.network.RecordPayload
 import com.example.book_keeper.network.TokenManager
 import com.example.book_keeper.ui.AuthScreen
+import com.example.book_keeper.ui.ExpenseScreen
 import kotlinx.coroutines.launch
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,9 +29,10 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(TokenManager.getToken(context) != null)
                 }
 
+                // 根據狀態決定要顯示哪個畫面
                 if (isLoggedIn) {
+                    // 傳入登出邏輯：將 isLoggedIn 設回 false
                     ExpenseScreen(onLogout = {
-                        TokenManager.clearToken(context)
                         isLoggedIn = false
                     })
                 } else {
@@ -38,84 +41,6 @@ class MainActivity : ComponentActivity() {
                     })
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun ExpenseScreen(onLogout: () -> Unit) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    
-    // 使用封裝好的 ApiClient，它會自動處理 Token 攔截
-    val apiService = remember { ApiClient.create(context) }
-
-    var amount by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = "新增收支紀錄",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        OutlinedTextField(
-            value = amount,
-            onValueChange = { amount = it },
-            label = { Text("金額") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = note,
-            onValueChange = { note = it },
-            label = { Text("備註") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    try {
-                        val amountValue = amount.toDoubleOrNull() ?: 0.0
-                        val payload = RecordPayload(
-                            amount = amountValue,
-                            category = "一般",
-                            recordType = "expense",
-                            date = "2024-04-01T12:00:00Z",
-                            note = note
-                        )
-
-                        val response = apiService.createRecord(payload)
-                        if (response.isSuccessful) {
-                            println("成功建立紀錄: ${response.body()?.message}")
-                            amount = ""
-                            note = ""
-                        } else {
-                            println("錯誤: ${response.code()}")
-                        }
-                    } catch (e: Exception) {
-                        println("發生錯誤: ${e.message}")
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("儲存紀錄")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(
-            onClick = onLogout,
-            modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
-        ) {
-            Text("登出帳號")
         }
     }
 }

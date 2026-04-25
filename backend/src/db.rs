@@ -38,7 +38,7 @@ pub async fn init_db() -> SqlitePool {
     .await
     .expect("cannot create records table");
 
-    println!("db connection and initialized successfully!");
+    tracing::info!("db connection and initialized successfully!");
 
     pool
 }

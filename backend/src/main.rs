@@ -4,13 +4,16 @@ mod models;
 
 
 use axum::{
-    routing::{get, post},
+    routing::{get, post, delete, put},
     Router,
 };
 use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
+    // 0. 初始化日誌系統
+    tracing_subscriber::fmt::init();
+
     // 1. 初始化資料庫連線
     let pool = db::init_db().await;
 
@@ -21,11 +24,13 @@ async fn main() {
         .route("/api/records/summary", get(handlers::get_summary))
         .route("/api/register", post(handlers::register))
         .route("/api/login", post(handlers::login))
+        .route("/api/records/{id}", delete(handlers::delete_record))
+        .route("/api/records/{id}", put(handlers::update_record))
         .with_state(pool);
 
     // 3. 設定伺服器監聽 IP 與 Port
     let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
-    println!("server is running, listening on {}", listener.local_addr().unwrap());
+    tracing::info!("server is running, listening on {}", listener.local_addr().unwrap());
 
     // 4. 啟動伺服器
     axum::serve(listener, app).await.unwrap();
