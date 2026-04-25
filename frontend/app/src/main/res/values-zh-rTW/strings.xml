@@ -1,0 +1,63 @@
+<resources>
+    <string name="app_name">記帳本</string>
+
+    <!-- 導航 -->
+    <string name="nav_home">首頁</string>
+    <string name="nav_records">紀錄</string>
+    <string name="nav_settings">設置</string>
+
+    <!-- 首頁 -->
+    <string name="home_total_expense">本月總支出</string>
+    <string name="home_new_record">新增紀錄</string>
+    <string name="home_amount">金額</string>
+    <string name="home_category">分類</string>
+    <string name="home_date">日期</string>
+    <string name="home_note">備註 (選填)</string>
+    <string name="home_submit">送出</string>
+    <string name="home_expense_structure">支出結構</string>
+    <string name="home_total">總計</string>
+    <string name="home_no_data">本月尚無支出數據</string>
+    <string name="home_confirm">確定</string>
+    <string name="home_cancel">取消</string>
+
+    <!-- 紀錄頁面 -->
+    <string name="records_history">歷史紀錄</string>
+    <string name="records_filter">篩選</string>
+    <string name="records_search_hint">搜索備註或分類</string>
+    <string name="records_sort">排序</string>
+    <string name="records_all_categories">全部</string>
+    <string name="records_empty">找不到符合條件的紀錄</string>
+    <string name="records_delete">刪除</string>
+    <string name="records_edit">編輯紀錄</string>
+    <string name="records_save">儲存</string>
+
+    <!-- 排序選項 -->
+    <string name="sort_date_desc">日期 (新到舊)</string>
+    <string name="sort_date_asc">日期 (舊到新)</string>
+    <string name="sort_amount_desc">金額 (大到小)</string>
+    <string name="sort_amount_asc">金額 (小到大)</string>
+
+    <!-- 設置頁面 -->
+    <string name="settings_title">帳號設定</string>
+    <string name="settings_current_user">當前使用者</string>
+    <string name="settings_logout">登出帳號</string>
+    <string name="settings_language">語言設定</string>
+    <string name="lang_en">English</string>
+    <string name="lang_zh_tw">繁體中文</string>
+    <string name="lang_zh_cn">简体中文</string>
+
+    <!-- 認證頁面 -->
+    <string name="auth_login_title">登入 Book-Keeper</string>
+    <string name="auth_register_title">註冊新帳號</string>
+    <string name="auth_username">帳號</string>
+    <string name="auth_password">密碼</string>
+    <string name="auth_login_btn">登入</string>
+    <string name="auth_register_btn">註冊</string>
+    <string name="auth_to_register">還沒有帳號？點此註冊</string>
+    <string name="auth_to_login">已有帳號？點此登入</string>
+    <string name="auth_empty_error">帳號密碼不能為空</string>
+    <string name="auth_login_fail">登入失敗：帳號或密碼錯誤</string>
+    <string name="auth_register_success">註冊成功！請直接登入</string>
+    <string name="auth_register_fail">註冊失敗：帳號可能已存在</string>
+    <string name="auth_network_error">網路連線失敗，請檢查網路設定</string>
+</resources>

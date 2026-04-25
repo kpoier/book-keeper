@@ -1,0 +1,72 @@
+<resources>
+    <string name="app_name">记账本</string>
+
+    <!-- 导航 -->
+    <string name="nav_home">首页</string>
+    <string name="nav_records">纪录</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- 首页 -->
+    <string name="home_total_expense">本月总支出</string>
+    <string name="home_new_record">新增纪录</string>
+    <string name="home_amount">金额</string>
+    <string name="home_category">分类</string>
+    <string name="home_date">日期</string>
+    <string name="home_note">备注 (选填)</string>
+    <string name="home_submit">提交</string>
+    <string name="home_expense_structure">支出结构</string>
+    <string name="home_total">总计</string>
+    <string name="home_no_data">本月尚无支出数据</string>
+    <string name="home_confirm">确定</string>
+    <string name="home_cancel">取消</string>
+
+    <!-- 类别 -->
+    <string name="cat_food">餐饮</string>
+    <string name="cat_transport">交通</string>
+    <string name="cat_housing">居住</string>
+    <string name="cat_entertainment">娱乐</string>
+    <string name="cat_shopping">购物</string>
+    <string name="cat_electronics">電子設備</string>
+    <string name="cat_other">其他</string>
+
+    <!-- 紀錄页面 -->
+    <string name="records_history">历史纪录</string>
+    <string name="records_filter">筛选</string>
+    <string name="records_search_hint">搜索备注或分类</string>
+    <string name="records_sort">排序</string>
+    <string name="records_all_categories">全部</string>
+    <string name="records_empty">找不到符合条件的纪录</string>
+    <string name="records_delete">删除</string>
+    <string name="records_edit">编辑纪录</string>
+    <string name="records_save">保存</string>
+
+    <!-- 排序选项 -->
+    <string name="sort_date_desc">日期 (新到旧)</string>
+    <string name="sort_date_asc">日期 (旧到新)</string>
+    <string name="sort_amount_desc">金额 (大到小)</string>
+    <string name="sort_amount_asc">金额 (小到大)</string>
+
+    <!-- 设置页面 -->
+    <string name="settings_title">账号设置</string>
+    <string name="settings_current_user">当前用户</string>
+    <string name="settings_logout">退出账号</string>
+    <string name="settings_language">语言设置</string>
+    <string name="lang_en">English</string>
+    <string name="lang_zh_tw">繁體中文</string>
+    <string name="lang_zh_cn">简体中文</string>
+
+    <!-- 认证页面 -->
+    <string name="auth_login_title">登录 Book-Keeper</string>
+    <string name="auth_register_title">注册新账号</string>
+    <string name="auth_username">账号</string>
+    <string name="auth_password">密码</string>
+    <string name="auth_login_btn">登录</string>
+    <string name="auth_register_btn">注册</string>
+    <string name="auth_to_register">还没有账号？点此注册</string>
+    <string name="auth_to_login">已有账号？點此登入</string>
+    <string name="auth_empty_error">账号密码不能為空</string>
+    <string name="auth_login_fail">登录失敗：账号或密码错误</string>
+    <string name="auth_register_success">注册成功！请直接登录</string>
+    <string name="auth_register_fail">注册失敗：账号可能已存在</string>
+    <string name="auth_network_error">网络连接失败，请检查网络设置</string>
+</resources>
