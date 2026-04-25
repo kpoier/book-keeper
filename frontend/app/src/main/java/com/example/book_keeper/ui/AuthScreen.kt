@@ -3,131 +3,190 @@ package com.example.book_keeper.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.book_keeper.R
 import com.example.book_keeper.network.ApiClient
 import com.example.book_keeper.network.AuthPayload
 import com.example.book_keeper.network.TokenManager
+import com.example.book_keeper.utils.LanguageManager
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
+/**
+ * 認證畫面 Composable。
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// 傳入一個 callback 函數，當登入成功時通知外部切換畫面
-fun AuthScreen(onAuthSuccess: () -> Unit) {
-    // 定義畫面的各種狀態
-    var isLoginMode by remember { mutableStateOf(true) } // true=登入, false=註冊
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var message by remember { mutableStateOf("") }
+fun AuthScreen(onAuthSuccess: () -> Unit, onLanguageChange: (String) -> Unit) {
+    var isLoginMode by rememberSaveable { mutableStateOf(true) }
+    var username by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var message by rememberSaveable { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val apiService = remember { ApiClient.create(context) } // 初始化自動帶 Token 的 API 客戶端
+    val apiService = remember { ApiClient.create(context) }
 
-    // 垂直置中排列所有元件
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // 標題
-        Text(
-            text = if (isLoginMode) "登入 Book-Keeper" else "註冊新帳號",
-            style = MaterialTheme.typography.headlineMedium
-        )
+    val currentLanguage = remember { LanguageManager.getLanguage(context) }
+    var expanded by remember { mutableStateOf(false) }
+    val languages = listOf(
+        "en" to stringResource(R.string.lang_en),
+        "zh-TW" to stringResource(R.string.lang_zh_tw),
+        "zh-CN" to stringResource(R.string.lang_zh_cn)
+    )
+    val selectedLanguageName = languages.find { it.first == currentLanguage }?.second ?: languages[0].second
 
-        Spacer(modifier = Modifier.height(32.dp))
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = if (isLoginMode) stringResource(R.string.auth_login_title) else stringResource(R.string.auth_register_title),
+                style = MaterialTheme.typography.headlineMedium
+            )
 
-        // 帳號輸入框
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("帳號") },
-            modifier = Modifier.fillMaxWidth()
-        )
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text(stringResource(R.string.auth_username)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
 
-        // 密碼輸入框 (輸入時會變成隱碼)
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("密碼") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.auth_password)) },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
 
-        // 登入/註冊按鈕與載入中動畫
-        if (isLoading) {
-            CircularProgressIndicator()
-        } else {
-            Button(
-                onClick = {
-                    if (username.isBlank() || password.isBlank()) {
-                        message = "帳號密碼不能為空"
-                        return@Button
-                    }
-                    isLoading = true
-                    message = ""
+            Spacer(modifier = Modifier.height(24.dp))
 
-                    // 開啟協程發送網路請求
-                    coroutineScope.launch {
-                        try {
-                            val payload = AuthPayload(username, password)
-                            if (isLoginMode) {
-                                // 執行登入
-                                val response = apiService.login(payload)
-                                if (response.isSuccessful) {
-                                    val token = response.body()?.token
-                                    if (token != null) {
-                                        TokenManager.saveToken(context, token) // 將 Token 存入手機
-                                        onAuthSuccess() // 呼叫成功事件，準備跳轉畫面
+            if (isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Button(
+                    onClick = {
+                        if (username.isBlank() || password.isBlank()) {
+                            message = context.getString(R.string.auth_empty_error)
+                            return@Button
+                        }
+                        isLoading = true
+                        message = ""
+
+                        coroutineScope.launch {
+                            try {
+                                val payload = AuthPayload(username, password)
+                                if (isLoginMode) {
+                                    val response = apiService.login(payload)
+                                    if (response.isSuccessful) {
+                                        val token = response.body()?.token
+                                        if (token != null) {
+                                            TokenManager.saveToken(context, token)
+                                            onAuthSuccess()
+                                        } else {
+                                            message = "Server error"
+                                        }
+                                    } else {
+                                        message = context.getString(R.string.auth_login_fail)
                                     }
                                 } else {
-                                    message = "登入失敗：帳號或密碼錯誤"
+                                    val response = apiService.register(payload)
+                                    if (response.isSuccessful) {
+                                        message = context.getString(R.string.auth_register_success)
+                                        isLoginMode = true
+                                    } else {
+                                        val errorJson = response.errorBody()?.string()
+                                        val errorMsg = try {
+                                            JSONObject(errorJson ?: "").getString("message")
+                                        } catch (e: Exception) { "" }
+                                        
+                                        message = if (errorMsg.contains("exist", ignoreCase = true)) {
+                                            context.getString(R.string.auth_register_fail)
+                                        } else {
+                                            context.getString(R.string.auth_register_fail)
+                                        }
+                                    }
                                 }
-                            } else {
-                                // 執行註冊
-                                val response = apiService.register(payload)
-                                if (response.isSuccessful) {
-                                    message = "註冊成功！請直接登入"
-                                    isLoginMode = true // 註冊完自動切回登入模式
-                                } else {
-                                    message = "註冊失敗：帳號可能已存在"
-                                }
+                            } catch (e: Exception) {
+                                message = context.getString(R.string.auth_network_error)
+                            } finally {
+                                isLoading = false
                             }
-                        } catch (e: Exception) {
-                            message = "網路錯誤：${e.message}"
-                        } finally {
-                            isLoading = false
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isLoginMode) "登入" else "註冊")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (isLoginMode) stringResource(R.string.auth_login_btn) else stringResource(R.string.auth_register_btn))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextButton(onClick = {
+                isLoginMode = !isLoginMode
+                message = ""
+            }) {
+                Text(if (isLoginMode) stringResource(R.string.auth_to_register) else stringResource(R.string.auth_to_login))
+            }
+
+            if (message.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = message, color = MaterialTheme.colorScheme.error)
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 切換模式的純文字按鈕
-        TextButton(onClick = {
-            isLoginMode = !isLoginMode
-            message = "" // 切換時清空錯誤訊息
-        }) {
-            Text(if (isLoginMode) "還沒有帳號？點此註冊" else "已有帳號？點此登入")
-        }
-
-        // 顯示錯誤或提示訊息
-        if (message.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = message, color = MaterialTheme.colorScheme.error)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 32.dp)
+                .widthIn(max = 200.dp)
+        ) {
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = selectedLanguageName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.settings_language)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor(),
+                    textStyle = MaterialTheme.typography.bodySmall
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    languages.forEach { (code, name) ->
+                        DropdownMenuItem(
+                            text = { Text(name) },
+                            onClick = {
+                                onLanguageChange(code)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }

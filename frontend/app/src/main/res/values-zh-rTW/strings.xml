@@ -19,6 +19,18 @@
     <string name="home_no_data">本月尚無支出數據</string>
     <string name="home_confirm">確定</string>
     <string name="home_cancel">取消</string>
+    <string name="home_comparison_title">收支對比統計</string>
+    <string name="home_compared_to_last">較上月總支出：</string>
+    <string name="home_analysis_title">各類別變動分析：</string>
+
+    <!-- 類別 -->
+    <string name="cat_food">餐飲</string>
+    <string name="cat_transport">交通</string>
+    <string name="cat_housing">居住</string>
+    <string name="cat_entertainment">娛樂</string>
+    <string name="cat_shopping">購物</string>
+    <string name="cat_electronics">電子設備</string>
+    <string name="cat_other">其他</string>
 
     <!-- 紀錄頁面 -->
     <string name="records_history">歷史紀錄</string>
@@ -42,6 +54,10 @@
     <string name="settings_current_user">當前使用者</string>
     <string name="settings_logout">登出帳號</string>
     <string name="settings_language">語言設定</string>
+    <string name="settings_theme">主題模式</string>
+    <string name="theme_light">淺色</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_system">系統預設</string>
     <string name="lang_en">English</string>
     <string name="lang_zh_tw">繁體中文</string>
     <string name="lang_zh_cn">简体中文</string>

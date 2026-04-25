@@ -2,6 +2,8 @@ package com.example.book_keeper.utils
 
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
+import android.os.LocaleList
 import java.util.Locale
 
 /**
@@ -19,15 +21,27 @@ object LanguageManager {
     fun setLanguage(context: Context, languageCode: String) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_LANGUAGE, languageCode).apply()
-        updateBaseContextLocale(context)
+        // 注意：這裡只更新存檔，實際套用通常透過重啟 Activity
     }
 
     /**
-     * 獲取目前儲存的語言代碼，預設為英文 "en"。
+     * 獲取目前儲存的語言代碼。
+     * 如果沒有儲存，則預設偵測系統語言。
      */
     fun getLanguage(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_LANGUAGE, "en") ?: "en"
+        val saved = prefs.getString(KEY_LANGUAGE, null)
+        if (saved != null) return saved
+
+        // 偵測系統語言
+        val locale = Locale.getDefault()
+        return when (locale.language) {
+            "zh" -> {
+                if (locale.country == "TW" || locale.country == "HK" || locale.toLanguageTag().contains("Hant")) "zh-TW"
+                else "zh-CN"
+            }
+            else -> "en"
+        }
     }
 
     /**
@@ -43,9 +57,11 @@ object LanguageManager {
         }
         Locale.setDefault(locale)
 
-        val configuration = context.resources.configuration
+        val configuration = Configuration(context.resources.configuration)
         configuration.setLocale(locale)
-        configuration.setLayoutDirection(locale)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            configuration.setLocales(LocaleList(locale))
+        }
 
         return context.createConfigurationContext(configuration)
     }

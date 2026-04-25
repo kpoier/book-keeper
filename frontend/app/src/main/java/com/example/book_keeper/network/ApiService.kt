@@ -11,7 +11,7 @@ import retrofit2.http.Path
 
 // --- 定義資料結構 ---
 data class AuthPayload(val username: String, val password: String)
-data class AuthResponse(val status: String, val token: String?, val message: String?)
+data class AuthResponse(val status: String, val token: String?, val username: String?, val message: String?)
 
 data class RecordPayload(
     val amount: Double,
@@ -32,6 +32,8 @@ data class RecordResponse(
 )
 
 data class SummaryResponse(val total_expense: Double, val total_income: Double)
+
+data class UserResponse(val username: String)
 
 // --- 定義 API 端點 ---
 interface ApiService {
@@ -64,4 +66,7 @@ interface ApiService {
 
     @GET("/api/records/summary")
     suspend fun getSummary(@Query("month") month: String? = null): Response<SummaryResponse>
+
+    @GET("/api/me")
+    suspend fun getMe(): Response<UserResponse>
 }

@@ -1,3 +1,79 @@
 <resources>
-    <string name="app_name">book-keeper</string>
+    <string name="app_name">Book-Keeper</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_records">Records</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Home Screen -->
+    <string name="home_total_expense">Monthly Total Expense</string>
+    <string name="home_new_record">New Record</string>
+    <string name="home_amount">Amount</string>
+    <string name="home_category">Category</string>
+    <string name="home_date">Date</string>
+    <string name="home_note">Note (Optional)</string>
+    <string name="home_submit">Submit</string>
+    <string name="home_expense_structure">Expense Structure</string>
+    <string name="home_total">Total</string>
+    <string name="home_no_data">No data for this month</string>
+    <string name="home_confirm">Confirm</string>
+    <string name="home_cancel">Cancel</string>
+    <string name="home_comparison_title">Comparison Summary</string>
+    <string name="home_compared_to_last">Compared to last month: </string>
+    <string name="home_analysis_title">Category Analysis:</string>
+
+    <!-- Categories -->
+    <string name="cat_food">Food</string>
+    <string name="cat_transport">Transport</string>
+    <string name="cat_housing">Housing</string>
+    <string name="cat_entertainment">Entertainment</string>
+    <string name="cat_shopping">Shopping</string>
+    <string name="cat_electronics">Electronics</string>
+    <string name="cat_other">Other</string>
+
+    <!-- Records Screen -->
+    <string name="records_history">History</string>
+    <string name="records_filter">Filter</string>
+    <string name="records_search_hint">Search note or category</string>
+    <string name="records_sort">Sort</string>
+    <string name="records_all_categories">All</string>
+    <string name="records_empty">No records found</string>
+    <string name="records_delete">Delete</string>
+    <string name="records_edit">Edit Record</string>
+    <string name="records_save">Save</string>
+
+    <!-- Sort Options -->
+    <string name="sort_date_desc">Date (New to Old)</string>
+    <string name="sort_date_asc">Date (Old to New)</string>
+    <string name="sort_amount_desc">Amount (Large to Small)</string>
+    <string name="sort_amount_asc">Amount (Small to Large)</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Account Settings</string>
+    <string name="settings_current_user">Current User</string>
+    <string name="settings_logout">Logout</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_theme">Theme Mode</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System Default</string>
+    <string name="lang_en">English</string>
+    <string name="lang_zh_tw">繁體中文</string>
+    <string name="lang_zh_cn">简体中文</string>
+
+    <!-- Auth Screen -->
+    <string name="auth_login_title">Login to Book-Keeper</string>
+    <string name="auth_register_title">Register New Account</string>
+    <string name="auth_username">Username</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_login_btn">Login</string>
+    <string name="auth_register_btn">Register</string>
+    <string name="auth_to_register">No account? Register here</string>
+    <string name="auth_to_login">Have account? Login here</string>
+    <string name="auth_empty_error">Username and password cannot be empty</string>
+    <string name="auth_login_fail">Login failed: wrong username or password</string>
+    <string name="auth_register_success">Register success! Please login</string>
+    <string name="auth_register_fail">Register failed: user may exist</string>
+    <string name="auth_network_error">Network error, please check settings</string>
 </resources>

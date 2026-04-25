@@ -19,6 +19,9 @@
     <string name="home_no_data">本月尚无支出数据</string>
     <string name="home_confirm">确定</string>
     <string name="home_cancel">取消</string>
+    <string name="home_comparison_title">收支对比统计</string>
+    <string name="home_compared_to_last">较上月总支出：</string>
+    <string name="home_analysis_title">各类别变动分析：</string>
 
     <!-- 类别 -->
     <string name="cat_food">餐饮</string>
@@ -26,7 +29,7 @@
     <string name="cat_housing">居住</string>
     <string name="cat_entertainment">娱乐</string>
     <string name="cat_shopping">购物</string>
-    <string name="cat_electronics">電子設備</string>
+    <string name="cat_electronics">电子设备</string>
     <string name="cat_other">其他</string>
 
     <!-- 紀錄页面 -->
@@ -63,10 +66,10 @@
     <string name="auth_login_btn">登录</string>
     <string name="auth_register_btn">注册</string>
     <string name="auth_to_register">还没有账号？点此注册</string>
-    <string name="auth_to_login">已有账号？點此登入</string>
-    <string name="auth_empty_error">账号密码不能為空</string>
-    <string name="auth_login_fail">登录失敗：账号或密码错误</string>
+    <string name="auth_to_login">已有账号？点此登录</string>
+    <string name="auth_empty_error">账号密码不能为空</string>
+    <string name="auth_login_fail">登录失败：账号或密码错误</string>
     <string name="auth_register_success">注册成功！请直接登录</string>
-    <string name="auth_register_fail">注册失敗：账号可能已存在</string>
+    <string name="auth_register_fail">注册失败：账号可能已存在</string>
     <string name="auth_network_error">网络连接失败，请检查网络设置</string>
 </resources>

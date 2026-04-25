@@ -213,7 +213,8 @@ pub async fn login(
                 StatusCode::OK, 
                 Json(LoginResponse { 
                     status: "success".to_string(), 
-                    token 
+                    token,
+                    username: payload.username.clone(),
                 })
             ).into_response();
         }
@@ -226,6 +227,27 @@ pub async fn login(
             message: "account or password error".to_string() 
         })
     ).into_response()
+}
+
+// 獲取當前使用者資訊
+pub async fn get_me(
+    State(pool): State<SqlitePool>,
+    claims: Claims,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let result = sqlx::query_scalar::<_, String>(
+        "SELECT username FROM users WHERE id = ?"
+    )
+    .bind(claims.sub)
+    .fetch_one(&pool)
+    .await;
+
+    match result {
+        Ok(username) => (StatusCode::OK, Json(json!({"username": username}))),
+        Err(e) => {
+            tracing::error!("failed to get user info: {}", e);
+            (StatusCode::NOT_FOUND, Json(json!({"error": "user not found"})))
+        }
+    }
 }
 
 impl<S> FromRequestParts<S> for Claims

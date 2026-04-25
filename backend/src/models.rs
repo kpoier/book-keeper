@@ -56,6 +56,7 @@ pub struct AuthPayload {
 pub struct LoginResponse {
     pub status: String,
     pub token: String, // JWT
+    pub username: String,
 }
 
 // 登入驗證 Claim
