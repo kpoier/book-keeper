@@ -19,9 +19,14 @@ import com.example.book_keeper.ui.screens.SettingsScreen
  * 
  * @param onLogout 當使用者點擊登出時的回調。
  * @param onLanguageChange 當使用者更改語言時的回調。
+ * @param onThemeChange 當使用者更改主題時的回調。
  */
 @Composable
-fun MainScaffold(onLogout: () -> Unit, onLanguageChange: (String) -> Unit) {
+fun MainScaffold(
+    onLogout: () -> Unit, 
+    onLanguageChange: (String) -> Unit,
+    onThemeChange: (String) -> Unit
+) {
     val navController = rememberNavController()
     val items = listOf(Screen.Home, Screen.Records, Screen.Settings)
 
@@ -60,7 +65,11 @@ fun MainScaffold(onLogout: () -> Unit, onLanguageChange: (String) -> Unit) {
                 RecordsScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen(onLogout = onLogout, onLanguageChange = onLanguageChange)
+                SettingsScreen(
+                    onLogout = onLogout, 
+                    onLanguageChange = onLanguageChange,
+                    onThemeChange = onThemeChange
+                )
             }
         }
     }

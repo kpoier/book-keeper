@@ -45,7 +45,7 @@
 
     <!-- 排序选项 -->
     <string name="sort_date_desc">日期 (新到旧)</string>
-    <string name="sort_date_asc">日期 (旧到新)</string>
+    <string name="sort_date_asc">日期 (旧 to 新)</string>
     <string name="sort_amount_desc">金额 (大到小)</string>
     <string name="sort_amount_asc">金额 (小到大)</string>
 
@@ -54,6 +54,10 @@
     <string name="settings_current_user">当前用户</string>
     <string name="settings_logout">退出账号</string>
     <string name="settings_language">语言设置</string>
+    <string name="settings_theme">主题模式</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_system">系统默认</string>
     <string name="lang_en">English</string>
     <string name="lang_zh_tw">繁體中文</string>
     <string name="lang_zh_cn">简体中文</string>

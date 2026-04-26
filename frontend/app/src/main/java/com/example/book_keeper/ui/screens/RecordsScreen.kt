@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -36,7 +37,6 @@ fun RecordsScreen() {
     val coroutineScope = rememberCoroutineScope()
     val apiService = remember { ApiClient.create(context) }
 
-    // 定義類別代碼與資源 ID 的映射
     val categoryMap = remember {
         mapOf(
             "food" to R.string.cat_food,
@@ -49,12 +49,9 @@ fun RecordsScreen() {
         )
     }
 
-    // 原始數據狀態
     var allRecords by remember { mutableStateOf<List<RecordResponse>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var editingRecord by remember { mutableStateOf<RecordResponse?>(null) }
-
-    // 搜索與篩選控制狀態
     var searchQuery by remember { mutableStateOf("") }
     
     val allCategoriesKey = "all"
@@ -75,9 +72,6 @@ fun RecordsScreen() {
         listOf(allCategoriesKey) + categoryMap.keys.toList()
     }
 
-    /**
-     * 從後端獲取最新的紀錄清單。
-     */
     val loadRecords = {
         coroutineScope.launch {
             isLoading = true
@@ -224,9 +218,14 @@ fun RecordsScreen() {
                         state = dismissState,
                         enableDismissFromStartToEnd = false,
                         backgroundContent = {
+                            // 修正處：加入圓角裁切以避免邊緣露出的問題
                             Box(
-                                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer)
-                                    .padding(20.dp), contentAlignment = Alignment.CenterEnd
+                                Modifier
+                                    .fillMaxSize()
+                                    .clip(CardDefaults.shape) // 使用與前景卡片相同的圓角
+                                    .background(MaterialTheme.colorScheme.errorContainer)
+                                    .padding(20.dp), 
+                                contentAlignment = Alignment.CenterEnd
                             ) {
                                 Icon(Icons.Default.Delete, stringResource(R.string.records_delete))
                             }
