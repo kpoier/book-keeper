@@ -1,11 +1,14 @@
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
+use std::env;
 
 pub async fn init_db() -> SqlitePool {
     // 設定 SQLite 連線。mode=rwc 代表如果檔案不存在，就自動建立一個
-    let db_url = "sqlite://records.db?mode=rwc";
+    // 可透過環境變數 DATABASE_URL 覆蓋路徑（Docker 部署用）
+    let db_url = env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "sqlite://records.db?mode=rwc".to_string());
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(db_url)
+        .connect(&db_url)
         .await
         .expect("cannot connect to db");
 
