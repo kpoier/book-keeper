@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,15 +38,16 @@ fun RecordsScreen() {
     val coroutineScope = rememberCoroutineScope()
     val apiService = remember { ApiClient.create(context) }
 
+    // 定義類別代碼、資源 ID 與 圖標的映射
     val categoryMap = remember {
         mapOf(
-            "food" to R.string.cat_food,
-            "transport" to R.string.cat_transport,
-            "housing" to R.string.cat_housing,
-            "entertainment" to R.string.cat_entertainment,
-            "shopping" to R.string.cat_shopping,
-            "electronics" to R.string.cat_electronics,
-            "other" to R.string.cat_other
+            "food" to (R.string.cat_food to Icons.Default.Restaurant),
+            "transport" to (R.string.cat_transport to Icons.Default.DirectionsCar),
+            "housing" to (R.string.cat_housing to Icons.Default.Home),
+            "entertainment" to (R.string.cat_entertainment to Icons.Default.TheaterComedy),
+            "shopping" to (R.string.cat_shopping to Icons.Default.ShoppingCart),
+            "electronics" to (R.string.cat_electronics to Icons.Default.Devices),
+            "other" to (R.string.cat_other to Icons.Default.Category)
         )
     }
 
@@ -144,20 +146,31 @@ fun RecordsScreen() {
                         ExposedDropdownMenuBox(
                             expanded = categoryExpanded,
                             onExpandedChange = { categoryExpanded = !categoryExpanded },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1.3f)
                         ) {
+                            val currentLabel = if (selectedCategoryKey == allCategoriesKey) 
+                                stringResource(R.string.records_all_categories) 
+                            else 
+                                stringResource(categoryMap[selectedCategoryKey]?.first ?: R.string.cat_other)
+                            
                             OutlinedTextField(
-                                value = if (selectedCategoryKey == allCategoriesKey) stringResource(R.string.records_all_categories) else stringResource(categoryMap[selectedCategoryKey] ?: R.string.cat_other),
+                                value = currentLabel,
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text(stringResource(R.string.home_category)) },
+                                leadingIcon = { 
+                                    val icon = if (selectedCategoryKey == allCategoriesKey) Icons.Default.List else categoryMap[selectedCategoryKey]?.second ?: Icons.Default.Category
+                                    Icon(icon, null) 
+                                },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
                                 modifier = Modifier.menuAnchor()
                             )
                             ExposedDropdownMenu(categoryExpanded, { categoryExpanded = false }) {
                                 filterCategories.forEach { key ->
-                                    val label = if (key == allCategoriesKey) stringResource(R.string.records_all_categories) else stringResource(categoryMap[key] ?: R.string.cat_other)
+                                    val label = if (key == allCategoriesKey) stringResource(R.string.records_all_categories) else stringResource(categoryMap[key]?.first ?: R.string.cat_other)
+                                    val icon = if (key == allCategoriesKey) Icons.Default.List else categoryMap[key]?.second ?: Icons.Default.Category
                                     DropdownMenuItem(
+                                        leadingIcon = { Icon(icon, null) },
                                         text = { Text(label) },
                                         onClick = { selectedCategoryKey = key; categoryExpanded = false }
                                     )
@@ -218,11 +231,10 @@ fun RecordsScreen() {
                         state = dismissState,
                         enableDismissFromStartToEnd = false,
                         backgroundContent = {
-                            // 修正處：加入圓角裁切以避免邊緣露出的問題
                             Box(
                                 Modifier
                                     .fillMaxSize()
-                                    .clip(CardDefaults.shape) // 使用與前景卡片相同的圓角
+                                    .clip(CardDefaults.shape)
                                     .background(MaterialTheme.colorScheme.errorContainer)
                                     .padding(20.dp), 
                                 contentAlignment = Alignment.CenterEnd
@@ -230,7 +242,7 @@ fun RecordsScreen() {
                                 Icon(Icons.Default.Delete, stringResource(R.string.records_delete))
                             }
                         },
-                        content = { RecordItem(record, categoryMap, onClick = { editingRecord = record }) }
+                        content = { RecordItem(record, categoryMap.mapValues { it.value.first to it.value.second }, onClick = { editingRecord = record }) }
                     )
                 }
             }
@@ -255,15 +267,21 @@ fun RecordsScreen() {
 }
 
 @Composable
-fun RecordItem(record: RecordResponse, categoryMap: Map<String, Int>, onClick: () -> Unit) {
+fun RecordItem(record: RecordResponse, categoryMap: Map<String, Pair<Int, ImageVector>>, onClick: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(
             Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val mapping = categoryMap[record.category]
+            if (mapping != null) {
+                Icon(mapping.second, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+            
             Column(Modifier.weight(1f)) {
-                val localizedCategory = categoryMap[record.category]?.let { stringResource(it) } ?: record.category
+                val localizedCategory = mapping?.let { stringResource(it.first) } ?: record.category
                 Text(localizedCategory, fontWeight = FontWeight.Bold)
                 Text(record.date.take(10), fontSize = 12.sp, color = Color.Gray)
                 if (!record.note.isNullOrBlank()) Text(record.note, fontSize = 14.sp)
@@ -281,7 +299,7 @@ fun RecordItem(record: RecordResponse, categoryMap: Map<String, Int>, onClick: (
 @Composable
 fun EditRecordDialog(
     record: RecordResponse, 
-    categoryMap: Map<String, Int>,
+    categoryMap: Map<String, Pair<Int, ImageVector>>,
     onDismiss: () -> Unit, 
     onConfirm: (Int, RecordPayload) -> Unit
 ) {
@@ -315,18 +333,22 @@ fun EditRecordDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+                    val mapping = categoryMap[selectedCategoryKey]
                     OutlinedTextField(
-                        value = stringResource(categoryMap[selectedCategoryKey] ?: R.string.cat_other),
+                        value = stringResource(mapping?.first ?: R.string.cat_other),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.home_category)) },
+                        leadingIcon = { Icon(mapping?.second ?: Icons.Default.Category, null) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(expanded, { expanded = false }) {
                         categoryKeys.forEach { key ->
+                            val itemMapping = categoryMap[key]
                             DropdownMenuItem(
-                                text = { Text(stringResource(categoryMap[key] ?: R.string.cat_other)) },
+                                leadingIcon = { Icon(itemMapping?.second ?: Icons.Default.Category, null) },
+                                text = { Text(stringResource(itemMapping?.first ?: R.string.cat_other)) },
                                 onClick = { selectedCategoryKey = key; expanded = false })
                         }
                     }

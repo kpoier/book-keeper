@@ -1,21 +1,35 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# --- Retrofit & OkHttp ---
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+-keepattributes AnnotationDefault
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+-keep class retrofit2.** { *; }
+-dontwarn retrofit2.**
+-keep class okhttp3.** { *; }
+-dontwarn okhttp3.**
+-dontwarn okio.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# --- Gson & Data Models ---
+# 防止 Gson 的 Data Class 欄位名稱被混淆
+# 確保包含所有在 network package 下的資料類別 (AuthPayload, RecordPayload, RecordResponse, etc.)
+-keep class com.example.book_keeper.network.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# 防止所有使用了 SerializedName 註解的欄位被混淆，這是 Retrofit/Gson 解析的關鍵
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# --- AndroidX & Jetpack Compose ---
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**
+
+# --- 保持所有的 Composable 函數 ---
+-keepclasseswithmembers class * {
+    @androidx.compose.runtime.Composable <methods>;
+}
+
+# --- 保持所有的 Enum 類別 (如果有使用的話) ---
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}

@@ -5,11 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,16 +38,16 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
     val apiService = remember { ApiClient.create(context) }
 
-    // 定義類別代碼與資源 ID 的映射
+    // 定義類別代碼、資源 ID 與 圖標的映射
     val categoryOptions = remember {
         listOf(
-            "food" to R.string.cat_food,
-            "transport" to R.string.cat_transport,
-            "housing" to R.string.cat_housing,
-            "entertainment" to R.string.cat_entertainment,
-            "shopping" to R.string.cat_shopping,
-            "electronics" to R.string.cat_electronics,
-            "other" to R.string.cat_other
+            Triple("food", R.string.cat_food, Icons.Default.Restaurant),
+            Triple("transport", R.string.cat_transport, Icons.Default.DirectionsCar),
+            Triple("housing", R.string.cat_housing, Icons.Default.Home),
+            Triple("entertainment", R.string.cat_entertainment, Icons.Default.TheaterComedy),
+            Triple("shopping", R.string.cat_shopping, Icons.Default.ShoppingCart),
+            Triple("electronics", R.string.cat_electronics, Icons.Default.Devices),
+            Triple("other", R.string.cat_other, Icons.Default.Category)
         )
     }
 
@@ -62,7 +65,6 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
     var showDatePicker by remember { mutableStateOf(false) }
 
     var expanded by remember { mutableStateOf(false) }
-    // 這裡儲存的是 Key (如 "food")
     var selectedCategoryKey by remember { mutableStateOf(categoryOptions[0].first) }
 
     val sdf = SimpleDateFormat("yyyy-MM", Locale.getDefault())
@@ -76,7 +78,6 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
     val loadData = {
         coroutineScope.launch {
             try {
-                // 獲取本月數據
                 val summaryResponse = apiService.getSummary(month = currentMonth)
                 if (summaryResponse.isSuccessful) {
                     totalExpense = summaryResponse.body()?.total_expense ?: 0.0
@@ -90,7 +91,6 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
                         .mapValues { entry -> entry.value.sumOf { it.amount } }
                 }
 
-                // 獲獲取上月數據
                 val lastSummaryResponse = apiService.getSummary(month = lastMonth)
                 if (lastSummaryResponse.isSuccessful) {
                     lastMonthTotalExpense = lastSummaryResponse.body()?.total_expense ?: 0.0
@@ -125,6 +125,8 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
         ) { DatePicker(state = datePickerState) }
     }
 
+    val currentSelectedOption = categoryOptions.find { it.first == selectedCategoryKey } ?: categoryOptions[0]
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -136,7 +138,6 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 新增紀錄卡片
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.home_new_record), fontWeight = FontWeight.Bold)
@@ -154,20 +155,21 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1.3f)
                     ) {
                         OutlinedTextField(
-                            // 顯示翻譯後的文字
-                            value = stringResource(categoryOptions.find { it.first == selectedCategoryKey }?.second ?: R.string.cat_other),
+                            value = stringResource(currentSelectedOption.second),
                             onValueChange = {},
                             readOnly = true,
                             label = { Text(stringResource(R.string.home_category)) },
+                            leadingIcon = { Icon(currentSelectedOption.third, null) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                             modifier = Modifier.menuAnchor()
                         )
                         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            categoryOptions.forEach { (key, resId) ->
+                            categoryOptions.forEach { (key, resId, icon) ->
                                 DropdownMenuItem(
+                                    leadingIcon = { Icon(icon, null) },
                                     text = { Text(stringResource(resId)) },
                                     onClick = { selectedCategoryKey = key; expanded = false }
                                 )
@@ -210,7 +212,7 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
                             val amountValue = amount.toDoubleOrNull() ?: return@launch
                             val payload = RecordPayload(
                                 amount = amountValue,
-                                category = selectedCategoryKey, // 發送給後端統一的 Key (如 "food")
+                                category = selectedCategoryKey,
                                 recordType = "expense",
                                 date = DateUtils.millisToIsoString(selectedDateMillis),
                                 note = note.ifBlank { null }
@@ -228,11 +230,10 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 本月支出結構
         Text("${stringResource(R.string.home_expense_structure)} ($currentMonth)", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(modifier = Modifier.height(16.dp))
         if (categoryBreakdown.isNotEmpty()) {
-            ExpenseChart(categoryBreakdown, totalExpense, categoryOptions.toMap())
+            ExpenseChart(categoryBreakdown, totalExpense, categoryOptions.associate { it.first to (it.second to it.third) })
         } else {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Box(modifier = Modifier.padding(32.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -243,21 +244,19 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 上月支出結構
         Text("${stringResource(R.string.home_expense_structure)} ($lastMonth)", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(modifier = Modifier.height(16.dp))
         if (lastMonthCategoryBreakdown.isNotEmpty()) {
-            ExpenseChart(lastMonthCategoryBreakdown, lastMonthTotalExpense, categoryOptions.toMap())
+            ExpenseChart(lastMonthCategoryBreakdown, lastMonthTotalExpense, categoryOptions.associate { it.first to (it.second to it.third) })
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // 支出統計分析
             ComparisonSummary(
                 currentTotal = totalExpense,
                 lastTotal = lastMonthTotalExpense,
                 currentBreakdown = categoryBreakdown,
                 lastBreakdown = lastMonthCategoryBreakdown,
-                categoryNameMap = categoryOptions.toMap()
+                categoryNameMap = categoryOptions.associate { it.first to it.second }
             )
         } else {
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -291,7 +290,6 @@ fun ComparisonSummary(
             Text(stringResource(R.string.home_comparison_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(modifier = Modifier.height(12.dp))
             
-            // 總額對比
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.home_compared_to_last), fontSize = 14.sp)
                 Text(
@@ -316,7 +314,6 @@ fun ComparisonSummary(
                 val lastVal = lastBreakdown[categoryKey] ?: 0.0
                 val diff = currentVal - lastVal
                 
-                // 根據 Key 獲取在地化名稱，若找不到則顯示原始 Key
                 val localizedName = categoryNameMap[categoryKey]?.let { stringResource(it) } ?: categoryKey
 
                 if (lastVal > 0 || currentVal > 0) {
@@ -350,7 +347,7 @@ fun ComparisonSummary(
 }
 
 @Composable
-fun ExpenseChart(breakdown: Map<String, Double>, total: Double, categoryNameMap: Map<String, Int>) {
+fun ExpenseChart(breakdown: Map<String, Double>, total: Double, categoryMap: Map<String, Pair<Int, ImageVector>>) {
     val chartColors = listOf(
         Color(0xFF42A5F5), Color(0xFF66BB6A), Color(0xFFFFA726),
         Color(0xFFEF5350), Color(0xFFAB47BC), Color(0xFF26C6DA), Color(0xFFD4E157)
@@ -396,8 +393,14 @@ fun ExpenseChart(breakdown: Map<String, Double>, total: Double, categoryNameMap:
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     
-                    val localizedName = categoryNameMap[entry.key]?.let { stringResource(it) } ?: entry.key
-                    Text(localizedName, modifier = Modifier.weight(1f), fontSize = 14.sp)
+                    val mapping = categoryMap[entry.key]
+                    if (mapping != null) {
+                        Icon(mapping.second, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(mapping.first), modifier = Modifier.weight(1f), fontSize = 14.sp)
+                    } else {
+                        Text(entry.key, modifier = Modifier.weight(1f), fontSize = 14.sp)
+                    }
 
                     val percentage = if (total > 0) (entry.value / total * 100) else 0.0
                     Text(
