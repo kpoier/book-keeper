@@ -1,5 +1,8 @@
 # Rust backend
 backend/target/
+*.db
+*.db-shm
+*.db-wal
 Cargo.lock
 *.pdb
 *.swp
