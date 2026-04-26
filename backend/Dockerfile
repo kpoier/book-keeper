@@ -1,22 +1,13 @@
 # ---- 階段一：編譯 ----
-FROM rust:1.85-slim AS builder
+FROM rust:1.85 AS builder
 
 WORKDIR /app
 
-# 安裝編譯所需的系統依賴（C 編譯器、SQLite、OpenSSL）
-RUN apt-get update && \
-    apt-get install -y pkg-config libssl-dev libsqlite3-dev build-essential && \
-    rm -rf /var/lib/apt/lists/*
+# 複製所有原始碼
+COPY . .
 
-# 先複製 Cargo 檔案，利用 Docker 快取加速（依賴不變就不用重新編譯）
-COPY Cargo.toml Cargo.lock* ./
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release 2>/dev/null || true
-RUN rm -rf src
-
-# 複製真正的原始碼並編譯
-COPY src ./src
-RUN touch src/main.rs && cargo build --release
+# 編譯 release 版本
+RUN cargo build --release
 
 # ---- 階段二：最終映像（極小） ----
 FROM debian:bookworm-slim
