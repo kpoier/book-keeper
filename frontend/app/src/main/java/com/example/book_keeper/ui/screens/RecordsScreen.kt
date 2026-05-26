@@ -28,17 +28,14 @@ import com.example.book_keeper.network.RecordResponse
 import com.example.book_keeper.utils.DateUtils
 import kotlinx.coroutines.launch
 
-/**
- * 歷史紀錄頁面 Composable。
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordsScreen() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val apiService = remember { ApiClient.create(context) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // 定義類別代碼、資源 ID 與 圖標的映射
     val categoryMap = remember {
         mapOf(
             "food" to (R.string.cat_food to Icons.Default.Restaurant),
@@ -106,144 +103,160 @@ fun RecordsScreen() {
         list
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(stringResource(R.string.records_history), fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            IconButton(onClick = { showFilters = !showFilters }) {
-                Icon(
-                    imageVector = if (showFilters) Icons.Default.Close else Icons.AutoMirrored.Filled.List,
-                    contentDescription = stringResource(R.string.records_filter)
-                )
-            }
-        }
-
-        AnimatedVisibility(visible = showFilters) {
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        label = { Text(stringResource(R.string.records_search_hint)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
-                        singleLine = true,
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Clear, null) }
-                            }
+                Text(stringResource(R.string.records_history), fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Row {
+                    IconButton(onClick = { 
+                        coroutineScope.launch {
+                            try {
+                                val response = apiService.exportRecords()
+                                if (response.isSuccessful) {
+                                    // 這裡之後可以實作檔案存檔邏輯
+                                    snackbarHostState.showSnackbar("CSV Exported successfully")
+                                }
+                            } catch (e: Exception) {}
                         }
-                    )
+                    }) {
+                        Icon(Icons.Default.Download, contentDescription = "Export CSV")
+                    }
+                    IconButton(onClick = { showFilters = !showFilters }) {
+                        Icon(
+                            imageVector = if (showFilters) Icons.Default.Close else Icons.AutoMirrored.Filled.List,
+                            contentDescription = stringResource(R.string.records_filter)
+                        )
+                    }
+                }
+            }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        var categoryExpanded by remember { mutableStateOf(false) }
-                        ExposedDropdownMenuBox(
-                            expanded = categoryExpanded,
-                            onExpandedChange = { categoryExpanded = !categoryExpanded },
-                            modifier = Modifier.weight(1.3f)
-                        ) {
-                            val currentLabel = if (selectedCategoryKey == allCategoriesKey) 
-                                stringResource(R.string.records_all_categories) 
-                            else 
-                                stringResource(categoryMap[selectedCategoryKey]?.first ?: R.string.cat_other)
-                            
-                            OutlinedTextField(
-                                value = currentLabel,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text(stringResource(R.string.home_category)) },
-                                leadingIcon = { 
-                                    val icon = if (selectedCategoryKey == allCategoriesKey) Icons.Default.List else categoryMap[selectedCategoryKey]?.second ?: Icons.Default.Category
-                                    Icon(icon, null) 
-                                },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
-                                modifier = Modifier.menuAnchor()
-                            )
-                            ExposedDropdownMenu(categoryExpanded, { categoryExpanded = false }) {
-                                filterCategories.forEach { key ->
-                                    val label = if (key == allCategoriesKey) stringResource(R.string.records_all_categories) else stringResource(categoryMap[key]?.first ?: R.string.cat_other)
-                                    val icon = if (key == allCategoriesKey) Icons.Default.List else categoryMap[key]?.second ?: Icons.Default.Category
-                                    DropdownMenuItem(
-                                        leadingIcon = { Icon(icon, null) },
-                                        text = { Text(label) },
-                                        onClick = { selectedCategoryKey = key; categoryExpanded = false }
-                                    )
+            AnimatedVisibility(visible = showFilters) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            label = { Text(stringResource(R.string.records_search_hint)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                            singleLine = true
+                        )
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            var categoryExpanded by remember { mutableStateOf(false) }
+                            ExposedDropdownMenuBox(
+                                expanded = categoryExpanded,
+                                onExpandedChange = { categoryExpanded = !categoryExpanded },
+                                modifier = Modifier.weight(1.3f)
+                            ) {
+                                val currentLabel = if (selectedCategoryKey == allCategoriesKey) 
+                                    stringResource(R.string.records_all_categories) 
+                                else 
+                                    stringResource(categoryMap[selectedCategoryKey]?.first ?: R.string.cat_other)
+                                
+                                OutlinedTextField(
+                                    value = currentLabel,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text(stringResource(R.string.home_category)) },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
+                                    modifier = Modifier.menuAnchor()
+                                )
+                                ExposedDropdownMenu(categoryExpanded, { categoryExpanded = false }) {
+                                    filterCategories.forEach { key ->
+                                        val label = if (key == allCategoriesKey) stringResource(R.string.records_all_categories) else stringResource(categoryMap[key]?.first ?: R.string.cat_other)
+                                        DropdownMenuItem(
+                                            text = { Text(label) },
+                                            onClick = { selectedCategoryKey = key; categoryExpanded = false }
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        var sortExpanded by remember { mutableStateOf(false) }
-                        ExposedDropdownMenuBox(
-                            expanded = sortExpanded,
-                            onExpandedChange = { sortExpanded = !sortExpanded },
-                            modifier = Modifier.weight(1.2f)
-                        ) {
-                            OutlinedTextField(
-                                value = sortOrderLabel,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text(stringResource(R.string.records_sort)) },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(sortExpanded) },
-                                modifier = Modifier.menuAnchor()
-                            )
-                            ExposedDropdownMenu(sortExpanded, { sortExpanded = false }) {
-                                sortOptions.forEach { opt ->
-                                    DropdownMenuItem(
-                                        text = { Text(opt) },
-                                        onClick = { sortOrderLabel = opt; sortExpanded = false }
-                                    )
+                            var sortExpanded by remember { mutableStateOf(false) }
+                            ExposedDropdownMenuBox(
+                                expanded = sortExpanded,
+                                onExpandedChange = { sortExpanded = !sortExpanded },
+                                modifier = Modifier.weight(1.2f)
+                            ) {
+                                OutlinedTextField(
+                                    value = sortOrderLabel,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text(stringResource(R.string.records_sort)) },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(sortExpanded) },
+                                    modifier = Modifier.menuAnchor()
+                                )
+                                ExposedDropdownMenu(sortExpanded, { sortExpanded = false }) {
+                                    sortOptions.forEach { opt ->
+                                        DropdownMenuItem(
+                                            text = { Text(opt) },
+                                            onClick = { sortOrderLabel = opt; sortExpanded = false }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        } else if (filteredRecords.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.records_empty), color = Color.Gray)
-            }
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(items = filteredRecords, key = { it.id }) { record ->
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = {
-                            if (it == SwipeToDismissBoxValue.EndToStart) {
-                                coroutineScope.launch {
-                                    if (apiService.deleteRecord(record.id).isSuccessful) loadRecords()
-                                }
-                                true
-                            } else false
-                        }
-                    )
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        enableDismissFromStartToEnd = false,
-                        backgroundContent = {
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .clip(CardDefaults.shape)
-                                    .background(MaterialTheme.colorScheme.errorContainer)
-                                    .padding(20.dp), 
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(Icons.Default.Delete, stringResource(R.string.records_delete))
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            } else if (filteredRecords.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.records_empty), color = Color.Gray)
+                }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(items = filteredRecords, key = { it.id }) { record ->
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = {
+                                if (it == SwipeToDismissBoxValue.EndToStart) {
+                                    coroutineScope.launch {
+                                        val response = apiService.deleteRecord(record.id)
+                                        if (response.isSuccessful) {
+                                            loadRecords()
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = "Record deleted",
+                                                actionLabel = "Undo",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                apiService.restoreRecord(record.id)
+                                                loadRecords()
+                                            }
+                                        }
+                                    }
+                                    true
+                                } else false
                             }
-                        },
-                        content = { RecordItem(record, categoryMap.mapValues { it.value.first to it.value.second }, onClick = { editingRecord = record }) }
-                    )
+                        )
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            enableDismissFromStartToEnd = false,
+                            backgroundContent = {
+                                Box(
+                                    Modifier.fillMaxSize().clip(CardDefaults.shape).background(MaterialTheme.colorScheme.errorContainer).padding(20.dp), 
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(Icons.Default.Delete, stringResource(R.string.records_delete))
+                                }
+                            },
+                            content = { RecordItem(record, categoryMap.mapValues { it.value.first to it.value.second }, onClick = { editingRecord = record }) }
+                        )
+                    }
                 }
             }
         }
@@ -301,7 +314,7 @@ fun EditRecordDialog(
     record: RecordResponse, 
     categoryMap: Map<String, Pair<Int, ImageVector>>,
     onDismiss: () -> Unit, 
-    onConfirm: (Int, RecordPayload) -> Unit
+    onConfirm: (String, RecordPayload) -> Unit // ID 型態改為 String
 ) {
     var amount by remember { mutableStateOf(record.amount.toString()) }
     var note by remember { mutableStateOf(record.note ?: "") }
@@ -339,7 +352,6 @@ fun EditRecordDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.home_category)) },
-                        leadingIcon = { Icon(mapping?.second ?: Icons.Default.Category, null) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
@@ -347,7 +359,6 @@ fun EditRecordDialog(
                         categoryKeys.forEach { key ->
                             val itemMapping = categoryMap[key]
                             DropdownMenuItem(
-                                leadingIcon = { Icon(itemMapping?.second ?: Icons.Default.Category, null) },
                                 text = { Text(stringResource(itemMapping?.first ?: R.string.cat_other)) },
                                 onClick = { selectedCategoryKey = key; expanded = false })
                         }
@@ -359,18 +370,8 @@ fun EditRecordDialog(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(stringResource(R.string.home_date)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showDatePicker = true },
-                    enabled = false,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
+                    enabled = false
                 )
 
                 OutlinedTextField(

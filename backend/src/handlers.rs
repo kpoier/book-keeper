@@ -1,10 +1,11 @@
 use axum::{
     extract::{Query, State, FromRequestParts, Path},
-    http::StatusCode,
+    http::{StatusCode, header},
     http::request::Parts,
     response::IntoResponse,
     Json,
 };
+use uuid::Uuid;
 use sqlx::SqlitePool;
 use rand::rngs::OsRng;
 use argon2::{
@@ -41,10 +42,12 @@ pub async fn create_record(
     let user_id = claims.sub; // 從 Token 中拿出剛剛登入的使用者 ID·
     tracing::info!("preparing to write data into db: {}", user_id);
 
-    // SQL 語法加入 user_id
+    // SQL 語法加入 user_id, uuid
+    let record_id = Uuid::new_v4().to_string();
     let result = sqlx::query(
-        "INSERT INTO records (user_id, amount, category, record_type, date, note) VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO records (id, user_id, amount, category, record_type, date, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))"
     )
+    .bind(&record_id)
     .bind(user_id)
     .bind(payload.amount)
     .bind(&payload.category)
@@ -85,7 +88,7 @@ pub async fn get_records(
     let result = if let Some(month) = params.month {
         let month_pattern = format!("{}%", month);
         sqlx::query_as::<_, Record>(
-            "SELECT * FROM records WHERE user_id = ? AND date LIKE ? ORDER BY date DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM records WHERE user_id = ? AND date LIKE ? AND deleted_at IS NULL ORDER BY date DESC LIMIT ? OFFSET ?",
         )
         .bind(user_id)
         .bind(month_pattern)
@@ -94,7 +97,7 @@ pub async fn get_records(
         .fetch_all(&pool)
         .await
     } else {
-        sqlx::query_as::<_, Record>("SELECT * FROM records WHERE user_id = ? ORDER BY date DESC LIMIT ? OFFSET ?")
+        sqlx::query_as::<_, Record>("SELECT * FROM records WHERE user_id = ? AND deleted_at IS NULL ORDER BY date DESC LIMIT ? OFFSET ?")
             .bind(user_id)
             .bind(limit)
             .bind(offset)
@@ -129,7 +132,7 @@ pub async fn get_summary(
             CAST(COALESCE(SUM(CASE WHEN record_type = 'expense' THEN amount ELSE 0 END), 0.0) AS REAL) as total_expense,
             CAST(COALESCE(SUM(CASE WHEN record_type = 'income' THEN amount ELSE 0 END), 0.0) AS REAL) as total_income
         FROM records
-        WHERE user_id = ? AND date LIKE ?
+        WHERE user_id = ? AND date LIKE ? AND deleted_at IS NULL
         "#,
     )
     .bind(user_id)
@@ -291,14 +294,14 @@ where
 pub async fn delete_record(
     State(pool): State<SqlitePool>,
     claims: Claims,
-    Path(id): Path<i32>,
+    Path(id): Path<String>,
 ) -> (StatusCode, Json<ApiResponse>) {
     let user_id = claims.sub;
 
     tracing::info!("preparing to delete record with id: {}, user_id: {}", id, user_id);
 
-    // 執行刪除
-    let result = sqlx::query("DELETE FROM records WHERE id = ? AND user_id = ?")
+    // 執行軟刪除
+    let result = sqlx::query("UPDATE records SET deleted_at = datetime('now', 'localtime'), updated_at = datetime('now', 'localtime') WHERE id = ? AND user_id = ?")
         .bind(id)
         .bind(user_id)
         .execute(&pool)
@@ -322,7 +325,7 @@ pub async fn delete_record(
 pub async fn update_record(
     State(pool): State<SqlitePool>,
     claims: Claims,
-    Path(id): Path<i32>,
+    Path(id): Path<String>,
     Json(payload): Json<RecordPayload>,
 ) -> (StatusCode, Json<ApiResponse>) {
     let user_id = claims.sub;
@@ -332,8 +335,8 @@ pub async fn update_record(
     let result = sqlx::query(
         r#"
         UPDATE records 
-        SET amount = ?, category = ?, record_type = ?, date = ?, note = ? 
-        WHERE id = ? AND user_id = ?
+        SET amount = ?, category = ?, record_type = ?, date = ?, note = ?, updated_at = datetime('now', 'localtime') 
+        WHERE id = ? AND user_id = ? AND deleted_at IS NULL
         "#
     )
         .bind(payload.amount)
@@ -355,6 +358,78 @@ pub async fn update_record(
         }
         Err(e) => {
             tracing::error!("failed to update record: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse { status: "error".to_string(), message: "server error".to_string() }))
+        }
+    }
+}
+
+// 導出資料 (CSV)
+pub async fn export_records(
+    State(pool): State<SqlitePool>,
+    claims: Claims,
+) -> impl IntoResponse {
+    let user_id = claims.sub;
+    tracing::info!("exporting records for user_id: {}", user_id);
+
+    let records_result = sqlx::query_as::<_, Record>(
+        "SELECT * FROM records WHERE user_id = ? AND deleted_at IS NULL ORDER BY date DESC"
+    )
+    .bind(user_id)
+    .fetch_all(&pool)
+    .await;
+
+    match records_result {
+        Ok(records) => {
+            let mut wtr = csv::Writer::from_writer(vec![]);
+            for r in records {
+                let _ = wtr.serialize(r);
+            }
+            let data = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
+            
+            let mut headers = header::HeaderMap::new();
+            headers.insert(
+                header::CONTENT_TYPE,
+                "text/csv; charset=utf-8".parse().unwrap(),
+            );
+            headers.insert(
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"records.csv\"".parse().unwrap(),
+            );
+
+            (StatusCode::OK, headers, data).into_response()
+        }
+        Err(e) => {
+            tracing::error!("failed to export records: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to export data").into_response()
+        }
+    }
+}
+
+// 復原被刪除的資料
+pub async fn restore_record(
+    State(pool): State<SqlitePool>,
+    claims: Claims,
+    Path(id): Path<String>,
+) -> (StatusCode, Json<ApiResponse>) {
+    let user_id = claims.sub;
+
+    tracing::info!("preparing to restore record with id: {}, user_id: {}", id, user_id);
+
+    let result = sqlx::query("UPDATE records SET deleted_at = NULL, updated_at = datetime('now', 'localtime') WHERE id = ? AND user_id = ?")
+        .bind(id)
+        .bind(user_id)
+        .execute(&pool)
+        .await;
+
+    match result {
+        Ok(row) if row.rows_affected() > 0 => {
+            (StatusCode::OK, Json(ApiResponse { status: "success".to_string(), message: "record restored".to_string() }))
+        }
+        Ok(_) => {
+            (StatusCode::NOT_FOUND, Json(ApiResponse { status: "error".to_string(), message: "record not found".to_string() }))
+        }
+        Err(e) => {
+            tracing::error!("failed to restore record: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse { status: "error".to_string(), message: "server error".to_string() }))
         }
     }

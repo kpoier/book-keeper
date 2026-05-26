@@ -8,8 +8,10 @@ A lightweight personal bookkeeping application built with a Rust backend and And
 
 - 🔐 **User Authentication** — Register & login with Argon2 password hashing
 - 🎫 **Stateless JWT Authorization** — Token-based authentication, no repeated database lookups
-- 📝 **Record CRUD** — Create, read, update, and delete financial records
+- 📝 **Record CRUD** — Create, read, update, and soft-delete financial records (UUID based)
 - 📊 **Financial Summary** — Monthly income and expense statistics
+- 📄 **Data Export** — Export all valid records to CSV format
+- 🔄 **Offline-First Ready** — Database schema supports UUIDs and timestamp tracking for multi-device sync
 - 🐳 **Docker Deployment** — Automated CI/CD with GitHub Actions pushing to DockerHub
 
 ## Tech Stack
@@ -49,11 +51,13 @@ book-keeper/
 | `POST` | `/api/register` | Register a new account | ❌ |
 | `POST` | `/api/login` | Login and receive JWT | ❌ |
 | `GET` | `/api/me` | Get current user info | ✅ |
-| `POST` | `/api/records` | Create a new record | ✅ |
-| `GET` | `/api/records` | List records | ✅ |
+| `POST` | `/api/records` | Create a new record (UUID) | ✅ |
+| `GET` | `/api/records` | List valid records | ✅ |
 | `PUT` | `/api/records/{id}` | Update a record | ✅ |
-| `DELETE` | `/api/records/{id}` | Delete a record | ✅ |
+| `DELETE` | `/api/records/{id}` | Soft delete a record | ✅ |
+| `POST` | `/api/records/{id}/restore`| Restore a deleted record | ✅ |
 | `GET` | `/api/records/summary` | Get income/expense summary | ✅ |
+| `GET` | `/api/records/export` | Export records to CSV | ✅ |
 
 ## Getting Started
 

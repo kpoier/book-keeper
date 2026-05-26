@@ -24,16 +24,41 @@ pub async fn init_db() -> SqlitePool {
     .await
     .expect("cannot create users table");
 
+    // 檢查 records 的 id 是否為 INTEGER
+    let rows = sqlx::query("PRAGMA table_info(records)")
+        .fetch_all(&pool)
+        .await
+        .unwrap_or_default();
+    
+    let mut is_old_schema = false;
+    for row in rows {
+        use sqlx::Row;
+        let name: String = row.get("name");
+        let type_name: String = row.get("type");
+        if name == "id" && type_name == "INTEGER" {
+            is_old_schema = true;
+            break;
+        }
+    }
+
+    if is_old_schema {
+        tracing::warn!("Detected old integer ID schema, dropping records table...");
+        sqlx::query("DROP TABLE records").execute(&pool).await.expect("failed to drop records table");
+    }
+
     // 記帳記錄表
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             user_id INTEGER NOT NULL, 
             amount REAL NOT NULL,
             category TEXT NOT NULL,
             record_type TEXT NOT NULL,
             date TEXT NOT NULL,
             note TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            deleted_at TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )"
     )

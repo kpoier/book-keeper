@@ -21,12 +21,15 @@ pub struct ApiResponse {
 // 用於「從資料庫讀取」並「傳回」前端的資料 (包含 ID)
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Record {
-    pub id: i32,
+    pub id: String,
     pub amount: f64,
     pub category: String,
     pub record_type: String,
     pub date: String,
     pub note: Option<String>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+    pub deleted_at: Option<String>,
 }
 
 // 定義網址列的查詢參數

@@ -8,8 +8,10 @@
 
 - 🔐 **使用者認證** — 註冊、登入，密碼使用 Argon2 雜湊保護
 - 🎫 **JWT 無狀態授權** — 登入後簽發 Token，無需重複查詢資料庫驗證身分
-- 📝 **記帳 CRUD** — 新增、查詢、編輯、刪除記帳紀錄
+- 📝 **記帳 CRUD** — 支援 UUID 主鍵、防誤刪的軟刪除 (Soft Delete) 與復原機制
 - 📊 **收支統計** — 依月份統計總收入與總支出
+- 📄 **資料導出** — 一鍵匯出為 CSV 格式
+- 🔄 **離線優先準備** — 內建 `created_at`, `updated_at` 支援多裝置與離線同步架構
 - 🐳 **Docker 部署** — 支援 GitHub Actions 自動構建並推送映像至 DockerHub
 
 ## 技術架構
@@ -49,11 +51,13 @@ book-keeper/
 | `POST` | `/api/register` | 註冊帳號 | ❌ |
 | `POST` | `/api/login` | 登入取得 Token | ❌ |
 | `GET` | `/api/me` | 取得當前使用者資訊 | ✅ |
-| `POST` | `/api/records` | 新增記帳紀錄 | ✅ |
-| `GET` | `/api/records` | 查詢記帳紀錄 | ✅ |
+| `POST` | `/api/records` | 新增記帳紀錄 (支援 UUID) | ✅ |
+| `GET` | `/api/records` | 查詢記帳紀錄 (過濾已刪除) | ✅ |
 | `PUT` | `/api/records/{id}` | 更新記帳紀錄 | ✅ |
-| `DELETE` | `/api/records/{id}` | 刪除記帳紀錄 | ✅ |
+| `DELETE` | `/api/records/{id}` | 軟刪除記帳紀錄 | ✅ |
+| `POST` | `/api/records/{id}/restore`| 復原已刪除的記帳紀錄 | ✅ |
 | `GET` | `/api/records/summary` | 取得收支統計 | ✅ |
+| `GET` | `/api/records/export` | 導出記帳紀錄為 CSV 檔案 | ✅ |
 
 ## 快速開始
 

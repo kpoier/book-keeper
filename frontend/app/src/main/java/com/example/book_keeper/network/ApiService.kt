@@ -1,5 +1,6 @@
 package com.example.book_keeper.network
 
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -8,32 +9,54 @@ import retrofit2.http.Query
 import retrofit2.http.DELETE
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import com.google.gson.annotations.SerializedName
 
 // --- 定義資料結構 ---
-data class AuthPayload(val username: String, val password: String)
-data class AuthResponse(val status: String, val token: String?, val username: String?, val message: String?)
+data class AuthPayload(
+    @SerializedName("username") val username: String,
+    @SerializedName("password") val password: String
+)
+
+data class AuthResponse(
+    @SerializedName("status") val status: String,
+    @SerializedName("token") val token: String?,
+    @SerializedName("username") val username: String?,
+    @SerializedName("message") val message: String?
+)
 
 data class RecordPayload(
-    val amount: Double,
-    val category: String,
-    @com.google.gson.annotations.SerializedName("type") val recordType: String,
-    val date: String,
-    val note: String?
+    @SerializedName("amount") val amount: Double,
+    @SerializedName("category") val category: String,
+    @SerializedName("type") val recordType: String,
+    @SerializedName("date") val date: String,
+    @SerializedName("note") val note: String?
 )
-data class ApiResponse(val status: String, val message: String)
+
+data class ApiResponse(
+    @SerializedName("status") val status: String,
+    @SerializedName("message") val message: String
+)
 
 data class RecordResponse(
-    val id: Int,
-    val amount: Double,
-    val category: String,
-    val record_type: String, // 這裡要對應 Rust 回傳的 JSON key
-    val date: String,
-    val note: String?
+    @SerializedName("id") val id: String, // 已變更為 String (UUID)
+    @SerializedName("amount") val amount: Double,
+    @SerializedName("category") val category: String,
+    @SerializedName("record_type") val record_type: String,
+    @SerializedName("date") val date: String,
+    @SerializedName("note") val note: String?,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?,
+    @SerializedName("deleted_at") val deletedAt: String?
 )
 
-data class SummaryResponse(val total_expense: Double, val total_income: Double)
+data class SummaryResponse(
+    @SerializedName("total_expense") val total_expense: Double,
+    @SerializedName("total_income") val total_income: Double
+)
 
-data class UserResponse(val username: String)
+data class UserResponse(
+    @SerializedName("username") val username: String
+)
 
 // --- 定義 API 端點 ---
 interface ApiService {
@@ -48,14 +71,19 @@ interface ApiService {
 
     @PUT("/api/records/{id}")
     suspend fun updateRecord(
-        @Path("id") id: Int,
+        @Path("id") id: String, // 已變更為 String
         @Body payload: RecordPayload
-    ): retrofit2.Response<ApiResponse>
+    ): Response<ApiResponse>
 
     @DELETE("/api/records/{id}")
     suspend fun deleteRecord(
-        @Path("id") id: Int
-    ): retrofit2.Response<ApiResponse>
+        @Path("id") id: String // 已變更為 String
+    ): Response<ApiResponse>
+
+    @POST("/api/records/{id}/restore")
+    suspend fun restoreRecord(
+        @Path("id") id: String // 新增復原 API
+    ): Response<ApiResponse>
 
     @GET("/api/records")
     suspend fun getRecords(
@@ -69,4 +97,7 @@ interface ApiService {
 
     @GET("/api/me")
     suspend fun getMe(): Response<UserResponse>
+
+    @GET("/api/records/export")
+    suspend fun exportRecords(): Response<ResponseBody> // 新增匯出 CSV API
 }

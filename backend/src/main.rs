@@ -21,11 +21,13 @@ async fn main() {
     let app = Router::new()
         .route("/api/records", post(handlers::create_record))
         .route("/api/records", get(handlers::get_records))
+        .route("/api/records/export", get(handlers::export_records))
         .route("/api/records/summary", get(handlers::get_summary))
         .route("/api/register", post(handlers::register))
         .route("/api/login", post(handlers::login))
         .route("/api/records/{id}", delete(handlers::delete_record))
         .route("/api/records/{id}", put(handlers::update_record))
+        .route("/api/records/{id}/restore", post(handlers::restore_record))
         .route("/api/me", get(handlers::get_me))
         .with_state(pool);
 
