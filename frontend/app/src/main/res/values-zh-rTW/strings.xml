@@ -42,6 +42,8 @@
     <string name="records_delete">刪除</string>
     <string name="records_edit">編輯紀錄</string>
     <string name="records_save">儲存</string>
+    <string name="records_deleted">紀錄已刪除</string>
+    <string name="records_undo">復原</string>
 
     <!-- 排序選項 -->
     <string name="sort_date_desc">日期 (新到舊)</string>
@@ -55,6 +57,13 @@
     <string name="settings_logout">登出帳號</string>
     <string name="settings_language">語言設定</string>
     <string name="settings_theme">主題模式</string>
+    <string name="settings_export_data">匯出數據</string>
+    <string name="settings_export_month_desc">選擇要匯出的月份 (CSV)</string>
+    <string name="settings_export_all">全部時間</string>
+    <string name="settings_export_btn">匯出 CSV</string>
+    <string name="settings_export_success">CSV 匯出成功</string>
+    <string name="settings_export_fail">匯出失敗</string>
+
     <string name="theme_light">淺色</string>
     <string name="theme_dark">深色</string>
     <string name="theme_system">系統預設</string>

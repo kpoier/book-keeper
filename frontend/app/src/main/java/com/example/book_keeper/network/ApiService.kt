@@ -99,5 +99,7 @@ interface ApiService {
     suspend fun getMe(): Response<UserResponse>
 
     @GET("/api/records/export")
-    suspend fun exportRecords(): Response<ResponseBody> // 新增匯出 CSV API
+    suspend fun exportRecords(
+        @Query("month") month: String? = null // 更新以支援選定時段匯出
+    ): Response<ResponseBody>
 }

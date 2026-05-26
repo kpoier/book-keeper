@@ -42,6 +42,8 @@
     <string name="records_delete">Delete</string>
     <string name="records_edit">Edit Record</string>
     <string name="records_save">Save</string>
+    <string name="records_deleted">Record deleted</string>
+    <string name="records_undo">Undo</string>
 
     <!-- Sort Options -->
     <string name="sort_date_desc">Date (New to Old)</string>
@@ -55,6 +57,13 @@
     <string name="settings_logout">Logout</string>
     <string name="settings_language">Language</string>
     <string name="settings_theme">Theme Mode</string>
+    <string name="settings_export_data">Export Data</string>
+    <string name="settings_export_month_desc">Select month to export (CSV)</string>
+    <string name="settings_export_all">All Time</string>
+    <string name="settings_export_btn">Export CSV</string>
+    <string name="settings_export_success">CSV exported successfully</string>
+    <string name="settings_export_fail">Export failed</string>
+
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_system">System Default</string>

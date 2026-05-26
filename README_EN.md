@@ -52,12 +52,12 @@ book-keeper/
 | `POST` | `/api/login` | Login and receive JWT | ❌ |
 | `GET` | `/api/me` | Get current user info | ✅ |
 | `POST` | `/api/records` | Create a new record (UUID) | ✅ |
-| `GET` | `/api/records` | List valid records | ✅ |
+| `GET` | `/api/records` | List valid records (supports `?month` filter) | ✅ |
 | `PUT` | `/api/records/{id}` | Update a record | ✅ |
 | `DELETE` | `/api/records/{id}` | Soft delete a record | ✅ |
 | `POST` | `/api/records/{id}/restore`| Restore a deleted record | ✅ |
-| `GET` | `/api/records/summary` | Get income/expense summary | ✅ |
-| `GET` | `/api/records/export` | Export records to CSV | ✅ |
+| `GET` | `/api/records/summary` | Get income/expense summary (supports `?month` filter) | ✅ |
+| `GET` | `/api/records/export` | Export records to CSV (supports `?month` filter) | ✅ |
 
 ## Getting Started
 

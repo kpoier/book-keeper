@@ -367,16 +367,28 @@ pub async fn update_record(
 pub async fn export_records(
     State(pool): State<SqlitePool>,
     claims: Claims,
+    Query(params): Query<RecordQuery>,
 ) -> impl IntoResponse {
     let user_id = claims.sub;
     tracing::info!("exporting records for user_id: {}", user_id);
 
-    let records_result = sqlx::query_as::<_, Record>(
-        "SELECT * FROM records WHERE user_id = ? AND deleted_at IS NULL ORDER BY date DESC"
-    )
-    .bind(user_id)
-    .fetch_all(&pool)
-    .await;
+    let records_result = if let Some(month) = params.month {
+        let month_pattern = format!("{}%", month);
+        sqlx::query_as::<_, Record>(
+            "SELECT * FROM records WHERE user_id = ? AND date LIKE ? AND deleted_at IS NULL ORDER BY date DESC"
+        )
+        .bind(user_id)
+        .bind(month_pattern)
+        .fetch_all(&pool)
+        .await
+    } else {
+        sqlx::query_as::<_, Record>(
+            "SELECT * FROM records WHERE user_id = ? AND deleted_at IS NULL ORDER BY date DESC"
+        )
+        .bind(user_id)
+        .fetch_all(&pool)
+        .await
+    };
 
     match records_result {
         Ok(records) => {

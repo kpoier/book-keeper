@@ -113,26 +113,11 @@ fun RecordsScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(stringResource(R.string.records_history), fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Row {
-                    IconButton(onClick = { 
-                        coroutineScope.launch {
-                            try {
-                                val response = apiService.exportRecords()
-                                if (response.isSuccessful) {
-                                    // 這裡之後可以實作檔案存檔邏輯
-                                    snackbarHostState.showSnackbar("CSV Exported successfully")
-                                }
-                            } catch (e: Exception) {}
-                        }
-                    }) {
-                        Icon(Icons.Default.Download, contentDescription = "Export CSV")
-                    }
-                    IconButton(onClick = { showFilters = !showFilters }) {
-                        Icon(
-                            imageVector = if (showFilters) Icons.Default.Close else Icons.AutoMirrored.Filled.List,
-                            contentDescription = stringResource(R.string.records_filter)
-                        )
-                    }
+                IconButton(onClick = { showFilters = !showFilters }) {
+                    Icon(
+                        imageVector = if (showFilters) Icons.Default.Close else Icons.AutoMirrored.Filled.List,
+                        contentDescription = stringResource(R.string.records_filter)
+                    )
                 }
             }
 
@@ -229,8 +214,8 @@ fun RecordsScreen() {
                                         if (response.isSuccessful) {
                                             loadRecords()
                                             val result = snackbarHostState.showSnackbar(
-                                                message = "Record deleted",
-                                                actionLabel = "Undo",
+                                                message = context.getString(R.string.records_deleted),
+                                                actionLabel = context.getString(R.string.records_undo),
                                                 duration = SnackbarDuration.Short
                                             )
                                             if (result == SnackbarResult.ActionPerformed) {

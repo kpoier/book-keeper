@@ -52,12 +52,12 @@ book-keeper/
 | `POST` | `/api/login` | 登入取得 Token | ❌ |
 | `GET` | `/api/me` | 取得當前使用者資訊 | ✅ |
 | `POST` | `/api/records` | 新增記帳紀錄 (支援 UUID) | ✅ |
-| `GET` | `/api/records` | 查詢記帳紀錄 (過濾已刪除) | ✅ |
+| `GET` | `/api/records` | 查詢記帳紀錄 (可使用 `?month` 過濾) | ✅ |
 | `PUT` | `/api/records/{id}` | 更新記帳紀錄 | ✅ |
 | `DELETE` | `/api/records/{id}` | 軟刪除記帳紀錄 | ✅ |
 | `POST` | `/api/records/{id}/restore`| 復原已刪除的記帳紀錄 | ✅ |
-| `GET` | `/api/records/summary` | 取得收支統計 | ✅ |
-| `GET` | `/api/records/export` | 導出記帳紀錄為 CSV 檔案 | ✅ |
+| `GET` | `/api/records/summary` | 取得收支統計 (可使用 `?month` 過濾) | ✅ |
+| `GET` | `/api/records/export` | 導出記帳紀錄為 CSV 檔案 (可使用 `?month` 過濾) | ✅ |
 
 ## 快速開始
 
