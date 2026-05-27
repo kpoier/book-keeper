@@ -229,8 +229,12 @@ fun SettingsScreen(
                                     if (response.isSuccessful && response.body() != null) {
                                         val fileName = if (selectedExportMonthKey == null) "records_all.csv" else "records_${selectedExportMonthKey}.csv"
                                         val isSaved = FileUtils.saveCsvToDownloads(context, response.body()!!, fileName)
-                                        val msgRes = if (isSaved) R.string.settings_export_success else R.string.settings_export_fail
-                                        snackbarHostState.showSnackbar(context.getString(msgRes))
+                                        if (isSaved) {
+                                            val successMsg = context.getString(R.string.settings_export_success)
+                                            snackbarHostState.showSnackbar("$successMsg: Downloads/$fileName")
+                                        } else {
+                                            snackbarHostState.showSnackbar(context.getString(R.string.settings_export_fail))
+                                        }
                                     } else {
                                         snackbarHostState.showSnackbar(context.getString(R.string.settings_export_fail))
                                     }

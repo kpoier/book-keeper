@@ -337,14 +337,16 @@ fun EditRecordDialog(
                     }
                 }
                 
-                OutlinedTextField(
-                    value = DateUtils.millisToDisplayDate(selectedDateMillis),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.home_date)) },
-                    modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
-                    enabled = false
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = DateUtils.millisToDisplayDate(selectedDateMillis),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.home_date)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(modifier = Modifier.matchParentSize().clickable { showDatePicker = true })
+                }
 
                 OutlinedTextField(
                     value = note,

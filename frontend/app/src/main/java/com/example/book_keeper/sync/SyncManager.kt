@@ -17,6 +17,7 @@ object SyncManager {
 
         val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(constraints)
+            .setInitialDelay(4, java.util.concurrent.TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context)
@@ -36,6 +37,7 @@ object SyncManager {
 
         val syncRequest = OneTimeWorkRequestBuilder<SettingsSyncWorker>()
             .setConstraints(constraints)
+            .setInitialDelay(4, java.util.concurrent.TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context)
