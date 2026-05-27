@@ -10,8 +10,9 @@ A lightweight personal bookkeeping application built with a Rust backend and And
 - 🎫 **Stateless JWT Authorization** — Token-based authentication, no repeated database lookups
 - 📝 **Record CRUD** — Create, read, update, and soft-delete financial records (UUID based)
 - 📊 **Financial Summary** — Monthly income and expense statistics
-- 📄 **Data Export** — Export all valid records to CSV format
-- 🔄 **Offline-First Ready** — Database schema supports UUIDs and timestamp tracking for multi-device sync
+- 📄 **Data Export** — Export records to CSV format (supports monthly filtering)
+- 🔄 **Offline-First Architecture** — Fully functional without internet. Utilizes SQLCipher for encrypted local SQLite storage, and Android WorkManager for seamless background syncing of financial records and user settings.
+- 🛡️ **Military-Grade Security** — Sensitive profile data (e.g. display name) is stored securely using `EncryptedSharedPreferences` (AES-256).
 - 🐳 **Docker Deployment** — Automated CI/CD with GitHub Actions pushing to DockerHub
 
 ## Tech Stack
@@ -58,6 +59,8 @@ book-keeper/
 | `POST` | `/api/records/{id}/restore`| Restore a deleted record | ✅ |
 | `GET` | `/api/records/summary` | Get income/expense summary (supports `?month` filter) | ✅ |
 | `GET` | `/api/records/export` | Export records to CSV (supports `?month` filter) | ✅ |
+| `GET` | `/api/settings` | Get user settings (display name, language, theme) | ✅ |
+| `PUT` | `/api/settings` | Update user settings | ✅ |
 
 ## Getting Started
 
