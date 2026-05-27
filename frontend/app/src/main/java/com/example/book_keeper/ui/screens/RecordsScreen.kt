@@ -34,6 +34,8 @@ fun RecordsScreen() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val apiService = remember { ApiClient.create(context) }
+    val database = remember { com.example.book_keeper.data.local.AppDatabase.getDatabase(context) }
+    val repository = remember { com.example.book_keeper.data.repository.TransactionRepository(apiService, database.transactionDao()) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     val categoryMap = remember {
@@ -48,8 +50,7 @@ fun RecordsScreen() {
         )
     }
 
-    var allRecords by remember { mutableStateOf<List<RecordResponse>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    val allRecords by repository.getAllActiveRecords().collectAsState(initial = emptyList())
     var editingRecord by remember { mutableStateOf<RecordResponse?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     
@@ -71,20 +72,9 @@ fun RecordsScreen() {
         listOf(allCategoriesKey) + categoryMap.keys.toList()
     }
 
-    val loadRecords = {
-        coroutineScope.launch {
-            isLoading = true
-            try {
-                val response = apiService.getRecords(limit = 200)
-                if (response.isSuccessful) allRecords = response.body() ?: emptyList()
-            } catch (e: Exception) {
-            } finally {
-                isLoading = false
-            }
-        }
+    LaunchedEffect(Unit) { 
+        com.example.book_keeper.sync.SyncManager.scheduleSync(context) 
     }
-
-    LaunchedEffect(Unit) { loadRecords() }
 
     val filteredRecords = remember(allRecords, searchQuery, selectedCategoryKey, sortOrderLabel) {
         var list = allRecords.filter { record ->
@@ -197,9 +187,7 @@ fun RecordsScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            } else if (filteredRecords.isEmpty()) {
+            if (filteredRecords.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.records_empty), color = Color.Gray)
                 }
@@ -210,18 +198,18 @@ fun RecordsScreen() {
                             confirmValueChange = {
                                 if (it == SwipeToDismissBoxValue.EndToStart) {
                                     coroutineScope.launch {
-                                        val response = apiService.deleteRecord(record.id)
-                                        if (response.isSuccessful) {
-                                            loadRecords()
-                                            val result = snackbarHostState.showSnackbar(
-                                                message = context.getString(R.string.records_deleted),
-                                                actionLabel = context.getString(R.string.records_undo),
-                                                duration = SnackbarDuration.Short
-                                            )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                apiService.restoreRecord(record.id)
-                                                loadRecords()
-                                            }
+                                        repository.deleteRecord(record.id)
+                                        com.example.book_keeper.sync.SyncManager.scheduleSync(context)
+                                        
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = context.getString(R.string.records_deleted),
+                                            actionLabel = context.getString(R.string.records_undo),
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            repository.restoreRecord(record.id)
+                                            com.example.book_keeper.sync.SyncManager.scheduleSync(context)
                                         }
                                     }
                                     true
@@ -254,10 +242,9 @@ fun RecordsScreen() {
             onDismiss = { editingRecord = null },
             onConfirm = { id, payload ->
                 coroutineScope.launch {
-                    if (apiService.updateRecord(id, payload).isSuccessful) {
-                        editingRecord = null
-                        loadRecords()
-                    }
+                    repository.updateRecord(id, payload)
+                    com.example.book_keeper.sync.SyncManager.scheduleSync(context)
+                    editingRecord = null
                 }
             }
         )

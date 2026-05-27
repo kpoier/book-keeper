@@ -37,6 +37,8 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val apiService = remember { ApiClient.create(context) }
+    val database = remember { com.example.book_keeper.data.local.AppDatabase.getDatabase(context) }
+    val repository = remember { com.example.book_keeper.data.repository.TransactionRepository(apiService, database.transactionDao()) }
 
     // 定義類別代碼、資源 ID 與 圖標的映射
     val categoryOptions = remember {
@@ -51,13 +53,39 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
         )
     }
 
-    // 當前月份數據
-    var totalExpense by remember { mutableStateOf(0.0) }
-    var categoryBreakdown by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
-    
-    // 上個月份數據
-    var lastMonthTotalExpense by remember { mutableStateOf(0.0) }
-    var lastMonthCategoryBreakdown by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
+    val allRecords by repository.getAllActiveRecords().collectAsState(initial = emptyList())
+
+    val sdf = java.text.SimpleDateFormat("yyyy-MM", java.util.Locale.getDefault())
+    val currentMonth = remember { sdf.format(java.util.Date()) }
+    val lastMonth = remember {
+        val cal = java.util.Calendar.getInstance()
+        cal.add(java.util.Calendar.MONTH, -1)
+        sdf.format(cal.time)
+    }
+
+    val currentMonthRecords = remember(allRecords, currentMonth) {
+        allRecords.filter { it.date.startsWith(currentMonth) }
+    }
+    val totalExpense = remember(currentMonthRecords) {
+        currentMonthRecords.filter { it.record_type == "expense" }.sumOf { it.amount }
+    }
+    val categoryBreakdown = remember(currentMonthRecords) {
+        currentMonthRecords.filter { it.record_type == "expense" }
+            .groupBy { it.category }
+            .mapValues { entry -> entry.value.sumOf { it.amount } }
+    }
+
+    val lastMonthRecords = remember(allRecords, lastMonth) {
+        allRecords.filter { it.date.startsWith(lastMonth) }
+    }
+    val lastMonthTotalExpense = remember(lastMonthRecords) {
+        lastMonthRecords.filter { it.record_type == "expense" }.sumOf { it.amount }
+    }
+    val lastMonthCategoryBreakdown = remember(lastMonthRecords) {
+        lastMonthRecords.filter { it.record_type == "expense" }
+            .groupBy { it.category }
+            .mapValues { entry -> entry.value.sumOf { it.amount } }
+    }
 
     var amount by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
@@ -67,47 +95,9 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
     var expanded by remember { mutableStateOf(false) }
     var selectedCategoryKey by remember { mutableStateOf(categoryOptions[0].first) }
 
-    val sdf = SimpleDateFormat("yyyy-MM", Locale.getDefault())
-    val currentMonth = remember { sdf.format(Date()) }
-    val lastMonth = remember {
-        val cal = Calendar.getInstance()
-        cal.add(Calendar.MONTH, -1)
-        sdf.format(cal.time)
+    LaunchedEffect(Unit) { 
+        com.example.book_keeper.sync.SyncManager.scheduleSync(context)
     }
-
-    val loadData = {
-        coroutineScope.launch {
-            try {
-                val summaryResponse = apiService.getSummary(month = currentMonth)
-                if (summaryResponse.isSuccessful) {
-                    totalExpense = summaryResponse.body()?.total_expense ?: 0.0
-                }
-                val recordsResponse = apiService.getRecords(month = currentMonth, limit = 100)
-                if (recordsResponse.isSuccessful) {
-                    val records = recordsResponse.body() ?: emptyList()
-                    categoryBreakdown = records
-                        .filter { it.record_type == "expense" }
-                        .groupBy { it.category }
-                        .mapValues { entry -> entry.value.sumOf { it.amount } }
-                }
-
-                val lastSummaryResponse = apiService.getSummary(month = lastMonth)
-                if (lastSummaryResponse.isSuccessful) {
-                    lastMonthTotalExpense = lastSummaryResponse.body()?.total_expense ?: 0.0
-                }
-                val lastRecordsResponse = apiService.getRecords(month = lastMonth, limit = 100)
-                if (lastRecordsResponse.isSuccessful) {
-                    val records = lastRecordsResponse.body() ?: emptyList()
-                    lastMonthCategoryBreakdown = records
-                        .filter { it.record_type == "expense" }
-                        .groupBy { it.category }
-                        .mapValues { entry -> entry.value.sumOf { it.amount } }
-                }
-            } catch (e: Exception) {}
-        }
-    }
-
-    LaunchedEffect(Unit) { loadData() }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
@@ -217,10 +207,9 @@ fun HomeScreen(onRecordAdded: () -> Unit = {}) {
                                 date = DateUtils.millisToIsoString(selectedDateMillis),
                                 note = note.ifBlank { null }
                             )
-                            if (apiService.createRecord(payload).isSuccessful) {
-                                amount = ""; note = ""; onRecordAdded()
-                                loadData()
-                            }
+                            repository.createRecord(payload)
+                            com.example.book_keeper.sync.SyncManager.scheduleSync(context)
+                            amount = ""; note = ""; onRecordAdded()
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
