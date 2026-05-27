@@ -39,7 +39,6 @@ fun SettingsScreen(
     val currentLanguage = LanguageManager.getLanguage(context)
     val currentThemeMode = ThemeManager.getThemeMode(context)
     
-    var username by remember { mutableStateOf("...") }
     var langExpanded by remember { mutableStateOf(false) }
     var themeExpanded by remember { mutableStateOf(false) }
     var exportExpanded by remember { mutableStateOf(false) }
@@ -88,18 +87,9 @@ fun SettingsScreen(
         monthOptions.find { it.first == selectedExportMonthKey }?.second ?: selectedExportMonthKey!!
     }
 
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            try {
-                val response = apiService.getMe()
-                if (response.isSuccessful) {
-                    username = response.body()?.username ?: "Unknown"
-                }
-            } catch (e: Exception) {
-                username = "Error"
-            }
-        }
-    }
+    var username by remember { mutableStateOf(com.example.book_keeper.utils.UserManager.getUsername(context) ?: "Unknown") }
+    var displayName by remember { mutableStateOf(com.example.book_keeper.utils.UserManager.getDisplayName(context) ?: "") }
+    var isEditingName by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -119,7 +109,43 @@ fun SettingsScreen(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(stringResource(R.string.settings_current_user), color = Color.Gray, fontSize = 14.sp)
-                    Text(username, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (isEditingName) {
+                        OutlinedTextField(
+                            value = displayName,
+                            onValueChange = { displayName = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                            TextButton(onClick = { 
+                                isEditingName = false
+                                displayName = com.example.book_keeper.utils.UserManager.getDisplayName(context) ?: ""
+                            }) {
+                                Text("Cancel") // Or string resource if you have one
+                            }
+                            Button(onClick = {
+                                com.example.book_keeper.utils.UserManager.saveDisplayName(context, displayName)
+                                com.example.book_keeper.sync.SyncManager.scheduleSettingsSync(context)
+                                isEditingName = false
+                            }) {
+                                Text("Save")
+                            }
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(if (displayName.isNotBlank()) displayName else username, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                if (displayName.isNotBlank()) {
+                                    Text("@$username", fontSize = 14.sp, color = Color.Gray)
+                                }
+                            }
+                            TextButton(onClick = { isEditingName = true }) {
+                                Text("Edit")
+                            }
+                        }
+                    }
                 }
             }
 
@@ -132,7 +158,10 @@ fun SettingsScreen(
                 expanded = langExpanded,
                 onExpandedChange = { langExpanded = it },
                 items = languages,
-                onItemClick = { onLanguageChange(it) }
+                onItemClick = { 
+                    onLanguageChange(it) 
+                    com.example.book_keeper.sync.SyncManager.scheduleSettingsSync(context)
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -144,7 +173,10 @@ fun SettingsScreen(
                 expanded = themeExpanded,
                 onExpandedChange = { themeExpanded = it },
                 items = themes,
-                onItemClick = { onThemeChange(it) }
+                onItemClick = { 
+                    onThemeChange(it) 
+                    com.example.book_keeper.sync.SyncManager.scheduleSettingsSync(context)
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))

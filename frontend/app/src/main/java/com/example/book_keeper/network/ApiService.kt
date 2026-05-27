@@ -58,6 +58,19 @@ data class UserResponse(
     @SerializedName("username") val username: String
 )
 
+data class UserSettingsPayload(
+    @SerializedName("display_name") val displayName: String?,
+    @SerializedName("language") val language: String?,
+    @SerializedName("theme") val theme: String?
+)
+
+data class UserSettingsResponse(
+    @SerializedName("username") val username: String,
+    @SerializedName("display_name") val displayName: String?,
+    @SerializedName("language") val language: String?,
+    @SerializedName("theme") val theme: String?
+)
+
 // --- 定義 API 端點 ---
 interface ApiService {
     @POST("/api/register")
@@ -102,4 +115,10 @@ interface ApiService {
     suspend fun exportRecords(
         @Query("month") month: String? = null // 更新以支援選定時段匯出
     ): Response<ResponseBody>
+
+    @GET("/api/settings")
+    suspend fun getUserSettings(): Response<UserSettingsResponse>
+
+    @PUT("/api/settings")
+    suspend fun updateUserSettings(@Body payload: UserSettingsPayload): Response<ApiResponse>
 }

@@ -29,6 +29,8 @@ async fn main() {
         .route("/api/records/{id}", put(handlers::update_record))
         .route("/api/records/{id}/restore", post(handlers::restore_record))
         .route("/api/me", get(handlers::get_me))
+        .route("/api/settings", get(handlers::get_user_settings))
+        .route("/api/settings", put(handlers::update_user_settings))
         .with_state(pool);
 
     // 3. 設定伺服器監聽 IP 與 Port

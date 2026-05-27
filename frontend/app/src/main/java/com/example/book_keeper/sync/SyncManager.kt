@@ -26,4 +26,23 @@ object SyncManager {
                 syncRequest
             )
     }
+
+    private const val SETTINGS_SYNC_WORK_NAME = "BOOK_KEEPER_SETTINGS_SYNC_WORK"
+
+    fun scheduleSettingsSync(context: Context) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val syncRequest = OneTimeWorkRequestBuilder<SettingsSyncWorker>()
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(
+                SETTINGS_SYNC_WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
+                syncRequest
+            )
+    }
 }

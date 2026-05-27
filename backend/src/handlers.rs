@@ -30,7 +30,9 @@ use crate::models::{
     AuthPayload,
     LoginResponse,
     Claims,
-    UserRow
+    UserRow,
+    UserSettingsPayload,
+    UserSettingsResponse
 };
 
 // POST /api/records
@@ -442,6 +444,92 @@ pub async fn restore_record(
         }
         Err(e) => {
             tracing::error!("failed to restore record: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse { status: "error".to_string(), message: "server error".to_string() }))
+        }
+    }
+}
+
+// 獲取使用者設定
+pub async fn get_user_settings(
+    State(pool): State<SqlitePool>,
+    claims: Claims,
+) -> (StatusCode, Json<UserSettingsResponse>) {
+    let user_id = claims.sub;
+
+    // 取得 username
+    let username = sqlx::query_scalar::<_, String>("SELECT username FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or_else(|_| "Unknown".to_string());
+
+    // 取得設定
+    #[derive(sqlx::FromRow)]
+    struct UserSettingsRow {
+        display_name: Option<String>,
+        language: Option<String>,
+        theme: Option<String>,
+    }
+
+    let record = sqlx::query_as::<_, UserSettingsRow>(
+        "SELECT display_name, language, theme FROM user_settings WHERE user_id = ?"
+    )
+    .bind(user_id)
+    .fetch_optional(&pool)
+    .await;
+
+    match record {
+        Ok(Some(row)) => (
+            StatusCode::OK,
+            Json(UserSettingsResponse {
+                username,
+                display_name: row.display_name,
+                language: row.language,
+                theme: row.theme,
+            }),
+        ),
+        _ => (
+            StatusCode::OK,
+            Json(UserSettingsResponse {
+                username,
+                display_name: None,
+                language: None,
+                theme: None,
+            }),
+        ),
+    }
+}
+
+// 更新使用者設定
+pub async fn update_user_settings(
+    State(pool): State<SqlitePool>,
+    claims: Claims,
+    Json(payload): Json<UserSettingsPayload>,
+) -> (StatusCode, Json<ApiResponse>) {
+    let user_id = claims.sub;
+
+    let result = sqlx::query(
+        r#"
+        INSERT INTO user_settings (user_id, display_name, language, theme, updated_at)
+        VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
+        ON CONFLICT(user_id) DO UPDATE SET
+            display_name = excluded.display_name,
+            language = excluded.language,
+            theme = excluded.theme,
+            updated_at = excluded.updated_at
+        "#
+    )
+    .bind(user_id)
+    .bind(&payload.display_name)
+    .bind(&payload.language)
+    .bind(&payload.theme)
+    .execute(&pool)
+    .await;
+
+    match result {
+        Ok(_) => (StatusCode::OK, Json(ApiResponse { status: "success".to_string(), message: "settings updated".to_string() })),
+        Err(e) => {
+            tracing::error!("failed to update user settings: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse { status: "error".to_string(), message: "server error".to_string() }))
         }
     }

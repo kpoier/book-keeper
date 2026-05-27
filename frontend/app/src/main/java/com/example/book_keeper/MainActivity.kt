@@ -53,6 +53,8 @@ class MainActivity : ComponentActivity() {
                             TokenManager.clearDatabaseKey(context)
                             // Clear JWT Token
                             TokenManager.clearToken(context)
+                            // Clear User Settings
+                            com.example.book_keeper.utils.UserManager.clearUser(context)
                             isLoggedIn = false
                         },
                         onLanguageChange = onLanguageChange,

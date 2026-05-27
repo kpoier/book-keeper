@@ -66,6 +66,21 @@ pub async fn init_db() -> SqlitePool {
     .await
     .expect("cannot create records table");
 
+    // 使用者設定表
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS user_settings (
+            user_id INTEGER PRIMARY KEY,
+            display_name TEXT,
+            language TEXT,
+            theme TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )"
+    )
+    .execute(&pool)
+    .await
+    .expect("cannot create user_settings table");
+
     tracing::info!("db connection and initialized successfully!");
 
     pool

@@ -75,3 +75,20 @@ pub struct UserRow {
     pub id: i32,
     pub password_hash: String,
 }
+
+// 使用者設定 Payload (前端傳來的資料)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserSettingsPayload {
+    pub display_name: Option<String>,
+    pub language: Option<String>,
+    pub theme: Option<String>,
+}
+
+// 使用者設定 Response (回傳給前端的資料)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserSettingsResponse {
+    pub username: String, // from users table fallback
+    pub display_name: Option<String>,
+    pub language: Option<String>,
+    pub theme: Option<String>,
+}

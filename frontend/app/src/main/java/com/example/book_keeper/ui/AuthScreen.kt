@@ -115,6 +115,30 @@ fun AuthScreen(onAuthSuccess: () -> Unit, onLanguageChange: (String) -> Unit) {
                                             val token = response.body()?.token
                                             if (token != null) {
                                                 TokenManager.saveToken(context, token)
+                                                
+                                                // Pull user settings from backend
+                                                try {
+                                                    val settingsResponse = apiService.getUserSettings()
+                                                    if (settingsResponse.isSuccessful) {
+                                                        settingsResponse.body()?.let { settings ->
+                                                            com.example.book_keeper.utils.UserManager.saveUsername(context, settings.username)
+                                                            com.example.book_keeper.utils.UserManager.saveDisplayName(context, settings.displayName)
+                                                            
+                                                            // Apply language if set
+                                                            settings.language?.let { lang ->
+                                                                onLanguageChange(lang)
+                                                            }
+                                                            
+                                                            // Apply theme if set
+                                                            settings.theme?.let { theme ->
+                                                                com.example.book_keeper.utils.ThemeManager.setThemeMode(context, theme)
+                                                            }
+                                                        }
+                                                    }
+                                                } catch (e: Exception) {
+                                                    e.printStackTrace()
+                                                }
+
                                                 onAuthSuccess()
                                             } else {
                                                 message = "Server error"

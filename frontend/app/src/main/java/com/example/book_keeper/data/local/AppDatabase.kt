@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.book_keeper.data.local.dao.TransactionDao
 import com.example.book_keeper.data.local.entity.TransactionEntity
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import com.example.book_keeper.network.TokenManager
 
 @Database(entities = [TransactionEntity::class], version = 1, exportSchema = false)
@@ -21,8 +21,9 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
+                System.loadLibrary("sqlcipher")
                 val passphrase = TokenManager.getDatabaseKey(context)
-                val factory = SupportFactory(passphrase)
+                val factory = SupportOpenHelperFactory(passphrase)
 
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
