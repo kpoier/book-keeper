@@ -1,6 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+}
+
+ksp {
+    arg("room.generateKotlin", "true")
 }
 
 android {
@@ -53,6 +58,14 @@ dependencies {
     
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    // Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
+    // WorkManager
+    implementation(libs.work.runtime.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

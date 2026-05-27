@@ -54,7 +54,8 @@ fun SettingsScreen(
         val keySdf = SimpleDateFormat("yyyy-MM", Locale.US)
         val displaySdf = SimpleDateFormat("yyyy-MM", Locale.getDefault())
         
-        val calendar = Calendar.getInstance()
+        // 強制使用 Locale.US 取得 Calendar 實例，確保年份為西元 (Gregorian)
+        val calendar = Calendar.getInstance(Locale.US)
         for (i in 0 until 12) {
             val key = keySdf.format(calendar.time)
             val display = displaySdf.format(calendar.time)
