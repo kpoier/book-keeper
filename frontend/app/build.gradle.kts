@@ -67,6 +67,11 @@ dependencies {
     // WorkManager
     implementation(libs.work.runtime.ktx)
 
+    // Security
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.sqlcipher)
+    implementation(libs.androidx.sqlite.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

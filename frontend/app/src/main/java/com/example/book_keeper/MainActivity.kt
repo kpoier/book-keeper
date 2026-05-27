@@ -45,6 +45,13 @@ class MainActivity : ComponentActivity() {
                 if (isLoggedIn) {
                     MainScaffold(
                         onLogout = {
+                            // Cancel all background syncs
+                            androidx.work.WorkManager.getInstance(context).cancelAllWork()
+                            // Destroy database
+                            com.example.book_keeper.data.local.AppDatabase.clearDatabase(context)
+                            // Destroy DB encryption key
+                            TokenManager.clearDatabaseKey(context)
+                            // Clear JWT Token
                             TokenManager.clearToken(context)
                             isLoggedIn = false
                         },
